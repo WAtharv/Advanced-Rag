@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kubernetes SRE Copilot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23162e51'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E2%8E%88%3C/text%3E%3C/svg%3E">
+<!-- Montserrat is the site-wide typeface, requested for this build. The request
+     may be blocked on locked-down networks; the CSS names a full sans fallback
+     stack so the layout is unaffected when the webfont does not load. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- USWDS banner pattern. Deliberately not the "An official website of the
+     United States government" line: this is an internal tool and the claim
+     would be false. -->
+<div class="site-banner">
+  <div class="page-width">
+    <p><strong>Internal operations tool.</strong> Kubernetes SRE · Advanced RAG on LangGraph</p>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="page-width header-inner">
+    <span class="logo-mark" aria-hidden="true">⎈</span>
+    <span class="logo-text">
+      <strong>Kubernetes SRE Copilot</strong>
+      <span class="logo-sub">Hybrid retrieval · reranking · Text2SQL with approval · guardrails</span>
+    </span>
+  </div>
+</header>
+
+<div class="app page-width">
+
+  <aside class="sidebar">
+    <div class="sidebar-block">
+      <div id="health" class="usa-summary-box">
+        <h2>Service status</h2>
+        <p class="muted">Checking the API…</p>
+      </div>
+    </div>
+
+    <div class="sidebar-block">
+      <h2 id="mode-legend">Answer mode</h2>
+      <fieldset class="usa-fieldset mode-fieldset" aria-labelledby="mode-legend">
+        <div class="usa-radio">
+          <input class="usa-radio__input" id="mode-llm" type="radio"
+                 name="answer-mode" value="llm" checked>
+          <label class="usa-radio__label" for="mode-llm">
+            <span class="mode-name">With LLM</span>
+            <span class="mode-hint">Generated answer synthesised from the sources</span>
+          </label>
+        </div>
+        <div class="usa-radio">
+          <input class="usa-radio__input" id="mode-extractive" type="radio"
+                 name="answer-mode" value="extractive">
+          <label class="usa-radio__label" for="mode-extractive">
+            <span class="mode-name">Without LLM</span>
+            <span class="mode-hint">Quotes the matching runbook passages verbatim</span>
+          </label>
+        </div>
+      </fieldset>
+      <p id="mode-note" class="muted note" role="status"></p>
+    </div>
+
+    <div class="sidebar-block">
+      <h2>Example questions</h2>
+      <ul id="examples" class="usa-sidenav"></ul>
+    </div>
+
+    <div class="sidebar-foot">
+      <button id="clear-chat" class="usa-button usa-button--outline usa-button--block" type="button">
+        Clear conversation
+      </button>
+      <button id="clear-cache" class="usa-button usa-button--outline usa-button--block" type="button">
+        Clear answer cache
+      </button>
+      <p id="cache-status" class="muted note" role="status"></p>
+
+      <div class="identifier">
+        <p><strong>Kubernetes SRE Copilot</strong> v0.1.0</p>
+        <p>Answers are generated from indexed runbooks and must be verified before
+        you act on a production cluster.</p>
+        <p><a href="/docs">API documentation</a></p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" role="tab" aria-selected="true"
+              aria-controls="panel-ask" data-tab="ask" type="button">Ask</button>
+      <button class="tab" role="tab" aria-selected="false"
+              aria-controls="panel-lab" data-tab="lab" type="button">Retrieval lab</button>
+    </div>
+
+    <!-- ------------------------------------------------------------ ask -->
+    <section id="panel-ask" class="panel" role="tabpanel">
+      <div id="scroller" class="scroller">
+        <div id="history" class="history"></div>
+        <div id="empty-state" class="empty-state">
+          <h2>Ask about the clusters, an incident, or a runbook.</h2>
+          <p class="muted">
+            Questions about incident counts or deployment history are routed to the
+            operations database. Those stop for your written approval before any
+            query is executed.
+          </p>
+        </div>
+        <div id="approval"></div>
+      </div>
+
+      <form id="ask-form" class="composer" autocomplete="off">
+        <label for="question">Your question</label>
+        <textarea id="question" class="usa-textarea" rows="1"
+                  placeholder="Ask about the clusters, an incident, or a runbook…"></textarea>
+        <button id="send" class="usa-button" type="submit">Send</button>
+      </form>
+      <p id="ask-error" class="error-bar hidden" role="alert"></p>
+    </section>
+
+    <!-- -------------------------------------------------- retrieval lab -->
+    <section id="panel-lab" class="panel hidden" role="tabpanel">
+      <div class="scroller">
+        <div class="lab">
+          <h2>Retrieval lab</h2>
+          <p class="muted">
+            Compare retrieval strategies without generation. This is the fastest way
+            to see what hybrid search, HyDE and reranking each contribute.
+          </p>
+
+          <form id="lab-form" autocomplete="off">
+            <fieldset class="usa-fieldset">
+              <label class="usa-label" for="lab-query">
+                <span>Query</span>
+                <input id="lab-query" class="usa-input" type="text"
+                       value="pod killed with exit code 137">
+              </label>
+
+              <div class="lab-controls">
+                <label class="usa-label" for="lab-mode">
+                  <span>Mode</span>
+                  <select id="lab-mode" class="usa-select">
+                    <option value="hybrid">hybrid</option>
+                    <option value="dense">dense</option>
+                    <option value="sparse">sparse</option>
+                  </select>
+                </label>
+                <label class="usa-label" for="lab-fusion">
+                  <span>Fusion</span>
+                  <select id="lab-fusion" class="usa-select">
+                    <option value="weighted">weighted</option>
+                    <option value="rrf">rrf</option>
+                  </select>
+                </label>
+                <div class="usa-checkbox">
+                  <input id="lab-hyde" type="checkbox">
+                  <label for="lab-hyde">HyDE</label>
+                </div>
+                <div class="usa-checkbox">
+                  <input id="lab-rerank" type="checkbox" checked>
+                  <label for="lab-rerank">Rerank</label>
+                </div>
+              </div>
+
+              <label class="usa-label" for="lab-topk">
+                <span>Candidates <span class="hint">(top_k:
+                  <output id="lab-topk-value">20</output>)</span></span>
+                <input id="lab-topk" type="range" min="5" max="50" step="1" value="20">
+              </label>
+
+              <button id="lab-run" class="usa-button" type="submit">Retrieve</button>
+            </fieldset>
+          </form>
+
+          <div id="lab-busy" class="busy hidden" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Retrieving…</span>
+          </div>
+          <p id="lab-error" class="error-bar hidden" role="alert"></p>
+          <div id="lab-results"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</div>
+
+<script src="markdown.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

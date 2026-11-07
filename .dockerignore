@@ -1,0 +1,49 @@
+# Build context hygiene
+.venv/
+venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Secrets and local configuration
+.env
+.env.*
+# Runtime configuration is supplied through environment variables
+
+# Local runtime data
+# Preserve data/corpus/ because deployment ingestion needs it
+data/qdrant/
+data/uploads/
+data/*.db*
+data/**/*.db*
+
+# ML model caches
+.locks/
+CACHEDIR.TAG
+models--*/
+.fastembed_cache/
+fastembed_cache/
+models_cache/
+hf_cache/
+
+# Development-only files
+.git/
+.gitignore
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+tests/
+scripts/
+run.ps1
+ragserver.log
+*.log
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db   

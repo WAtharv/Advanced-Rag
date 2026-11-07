@@ -1,0 +1,800 @@
+/* Kubernetes SRE Copilot - styled after the U.S. Web Design System (USWDS v3).
+ *
+ * Light mode only, which is what USWDS ships: white page, #1b1b1b ink, the
+ * blue-60v/70v/80v primary ramp, square-cornered inputs, 0.5rem-stripe alerts,
+ * accordions instead of disclosure triangles, and a 0.25rem #2491ff focus ring.
+ *
+ * Tokens are copied by value rather than pulled from the USWDS package: this
+ * app has no build step and npm is not reachable on the network it runs on.
+ * Montserrat is the site-wide typeface (loaded from Google Fonts in
+ * index.html) and degrades to the platform UI font if that request is blocked.
+ */
+
+:root {
+  /* USWDS system tokens, by value. */
+  --primary: #005ea2;         /* blue-60v  */
+  --primary-dark: #1a4480;    /* blue-70v  */
+  --primary-darker: #162e51;  /* blue-80v  */
+  --primary-light: #73b3e7;   /* blue-30   */
+  --primary-lighter: #d9e8f6; /* blue-10   */
+  --accent-cool: #00bde3;     /* cyan-30v  */
+  --accent-warm: #fa9441;     /* orange-30v*/
+  --gold: #ffbe2e;            /* gold-20v - the federal masthead accent rule */
+  --gold-dark: #e5a000;       /* gold-30v */
+
+  --ink: #1b1b1b;             /* gray-90 / base-darkest */
+  --base-darker: #3d4551;
+  --base-dark: #565c65;
+  --base: #71767a;
+  --base-light: #a9aeb1;
+  --base-lighter: #dfe1e2;
+  --base-lightest: #f0f0f0;
+  --white: #ffffff;
+
+  --error: #d83933;           /* red-50v */
+  --error-dark: #b50909;      /* red-60v */
+  --error-lighter: #f4e3db;
+  --warning: #ffbe2e;         /* gold-20v */
+  --warning-lighter: #faf3d1;
+  --warning-ink: #8a6c00;
+  --success: #00a91c;         /* green-cool-40v */
+  --success-lighter: #ecf3ec;
+  --success-ink: #216e1f;
+  --info: #00bde3;
+  --info-lighter: #e7f6f8;
+  --info-ink: #00687d;
+
+  --focus: #2491ff;
+
+  /* Montserrat is the site-wide typeface for this build (loaded in index.html).
+     The stacks below fall back to the platform sans face if the webfont is
+     blocked, so nothing depends on the download succeeding. --display is the
+     same family; USWDS would pair a serif here, but this build is single-family
+     by request, leaning on weight rather than a second face for hierarchy. */
+  --sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --display: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  /* Kept as an alias so the many `var(--serif)` display rules resolve to
+     Montserrat without a sweeping rename. */
+  --serif: var(--display);
+  --mono: "Roboto Mono", "Roboto Mono Web", ui-monospace, "Cascadia Mono",
+    Consolas, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  color: var(--ink);
+  /* Montserrat is the app-wide font by request; everything inherits it except
+     code/pre, which stay monospace. */
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 0.25rem solid var(--focus);
+  outline-offset: 0;
+}
+
+/* ----------------------------------------------------------- banner strip */
+
+/* The USWDS banner pattern, minus the "official website of the United States
+   government" line - this is an internal tool and that claim would be false. */
+.site-banner {
+  flex: 0 0 auto;
+  background: var(--base-lightest);
+  border-bottom: 1px solid var(--base-lighter);
+  font-size: 13px;
+  color: var(--base-dark);
+}
+.site-banner p { margin: 0; padding: 6px 0; }
+.site-banner strong { color: var(--ink); }
+
+.page-width { max-width: 1400px; margin: 0 auto; padding: 0 24px; width: 100%; }
+
+/* ---------------------------------------------------------------- header */
+
+/* Dark navy masthead with a gold accent rule underneath - the federal
+   whitehouse.gov / USWDS header register, on the primary-80v navy already in
+   the token set. */
+.site-header {
+  flex: 0 0 auto;
+  background: var(--primary-darker);
+  border-bottom: 3px solid var(--gold);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+.logo-mark {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  background: var(--gold);
+  color: var(--primary-darker);
+  border-radius: 3px;
+  font-size: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+.logo-text strong {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--white);
+}
+.logo-sub { font-size: 13.5px; color: var(--primary-light); margin-top: 2px; }
+
+/* ------------------------------------------------------------------ shell */
+
+.app {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 24px 24px 0;
+  border-right: 1px solid var(--base-lighter);
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sidebar-block { padding: 24px 0 0; }
+.sidebar-foot { margin-top: auto; padding: 24px 0 0; }
+#clear-chat { margin-bottom: 10px; }
+.usa-button--block:disabled { opacity: 0.6; }
+
+.muted { color: var(--base-dark); }
+.note { font-size: 14px; margin: 10px 0 0; min-height: 18px; }
+
+/* ------------------------------------------------------------ summary box */
+
+/* USWDS summary box: the status panel reads as a standing fact sheet. */
+.usa-summary-box {
+  background: var(--info-lighter);
+  border: 1px solid var(--accent-cool);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 4px 4px 0;
+  padding: 16px 18px;
+}
+.usa-summary-box h2 {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--primary-darker);
+}
+
+.health-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 14.5px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+.health-row:last-of-type { border-bottom: none; }
+.health-row .label { color: var(--base-dark); }
+.health-row .value { text-align: right; font-weight: 600; word-break: break-word; }
+
+.features { list-style: none; margin: 0; padding: 0; font-size: 14.5px; }
+.features li {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--base-lighter);
+  color: var(--base-dark);
+}
+.features li:last-child { border-bottom: none; }
+.features li.on { color: var(--ink); }
+.features .mark { font-weight: 700; margin-right: 8px; }
+.features li.on .mark { color: var(--success-ink); }
+.features li.off .mark { color: var(--base); }
+
+/* ------------------------------------------------------------ usa-sidenav */
+
+.usa-sidenav { list-style: none; margin: 0; padding: 0; }
+.usa-sidenav__item { border-top: 1px solid var(--base-lighter); }
+.usa-sidenav__item:last-child { border-bottom: 1px solid var(--base-lighter); }
+
+.example {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--primary);
+  background: none;
+  border: none;
+  border-left: 4px solid transparent;
+  padding: 10px 12px 10px 10px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.example:hover {
+  color: var(--primary-dark);
+  background: var(--base-lightest);
+  border-left-color: var(--primary);
+  text-decoration: none;
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.usa-button {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--white);
+  background: var(--primary);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 20px;
+  cursor: pointer;
+  text-align: center;
+}
+.usa-button:hover:not(:disabled) { background: var(--primary-dark); }
+.usa-button:active:not(:disabled) { background: var(--primary-darker); }
+.usa-button:disabled { background: var(--base-light); color: var(--white); cursor: not-allowed; }
+
+.usa-button--outline {
+  background: transparent;
+  color: var(--primary);
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+.usa-button--outline:hover:not(:disabled) {
+  background: transparent;
+  color: var(--primary-dark);
+  box-shadow: inset 0 0 0 2px var(--primary-dark);
+}
+.usa-button--outline:disabled { background: transparent; color: var(--base-light); box-shadow: inset 0 0 0 2px var(--base-light); }
+
+.usa-button--secondary { background: var(--error); }
+.usa-button--secondary:hover:not(:disabled) { background: var(--error-dark); }
+
+.usa-button--block { width: 100%; }
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--base-lighter);
+  flex: 0 0 auto;
+  padding: 0 24px;
+}
+.tab {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  background: none;
+  border: none;
+  border-bottom: 4px solid transparent;
+  padding: 14px 18px;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.tab:hover { background: var(--base-lightest); }
+.tab.is-active { color: var(--ink); border-bottom-color: var(--primary); }
+
+.panel { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.hidden { display: none !important; }
+
+.main { display: flex; flex-direction: column; min-width: 0; }
+.scroller { flex: 1; overflow-y: auto; padding: 24px; }
+
+.history { display: flex; flex-direction: column; gap: 32px; }
+
+.empty-state {
+  max-width: 640px;
+  margin: 8% auto 0;
+  border-left: 4px solid var(--primary);
+  padding: 4px 0 4px 20px;
+}
+.empty-state h2 {
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  color: var(--primary-darker);
+}
+.empty-state p { margin: 0; font-size: 16px; }
+
+/* -------------------------------------------------------------- messages */
+
+.turn { max-width: 900px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Chat layout: the user's message is a right-aligned bubble, the bot reply is
+   an avatar plus a body column that holds the answer card and its accordions. */
+.chat-row { display: flex; gap: 12px; align-items: flex-start; }
+.chat-row--user { justify-content: flex-end; }
+.chat-row--bot { justify-content: flex-start; }
+
+.avatar {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: var(--primary-darker);
+  color: var(--white);
+  border-radius: 50%;
+  font-size: 18px;
+  margin-top: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.bot-content { flex: 1 1 auto; min-width: 0; }
+
+.bubble--user {
+  max-width: 78%;
+  background: var(--primary);
+  color: var(--white);
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 12px 16px;
+  border-radius: 14px 14px 4px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.answer {
+  background: var(--white);
+  border: 1px solid var(--base-lighter);
+  border-top: 4px solid var(--primary);
+  border-radius: 4px 12px 12px 12px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.answer.is-blocked { border-top-color: var(--error); }
+
+/* The pending turn reuses the answer's frame so the spinner reads as the bot's
+   reply bubble rather than floating under the previous turn. */
+.turn.is-pending .busy {
+  margin: 0;
+  padding: 18px 22px;
+  background: var(--base-lightest);
+  border: 1px solid var(--base-lighter);
+  border-top: 4px solid var(--primary-light);
+  border-radius: 4px 12px 12px 12px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--base-lighter);
+}
+
+/* USWDS tag: small, uppercase, high-contrast. */
+.usa-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--base-lightest);
+  color: var(--base-darker);
+  border-radius: 2px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.usa-tag code { font-size: 12px; background: none; padding: 0; text-transform: none; }
+.usa-tag--info { background: var(--info-lighter); color: var(--info-ink); }
+.usa-tag--success { background: var(--success-lighter); color: var(--success-ink); }
+.usa-tag--warning { background: var(--warning-lighter); color: var(--warning-ink); }
+.usa-tag--error { background: var(--error-lighter); color: var(--error-dark); }
+
+/* ---------------------------------------------------------------- prose */
+
+.prose > *:first-child { margin-top: 0; }
+.prose > *:last-child { margin-bottom: 0; }
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  margin: 24px 0 10px;
+  line-height: 1.3;
+  color: var(--primary-darker);
+}
+.prose h1, .prose h2 { font-family: var(--serif); }
+.prose h1 { font-size: 26px; }
+.prose h2 { font-size: 22px; }
+.prose h3 { font-size: 19px; }
+.prose h4, .prose h5, .prose h6 { font-size: 17px; }
+.prose p { margin: 0 0 14px; }
+.prose ul, .prose ol { margin: 0 0 14px; padding-left: 26px; }
+.prose li { margin: 6px 0; }
+.prose li > ul, .prose li > ol { margin: 6px 0; }
+.prose a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.prose a:hover { color: var(--primary-dark); }
+.prose hr { border: none; border-top: 1px solid var(--base-lighter); margin: 22px 0; }
+.prose blockquote {
+  margin: 0 0 14px;
+  padding: 4px 0 4px 18px;
+  border-left: 4px solid var(--base-lighter);
+  color: var(--base-darker);
+}
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--base-lightest);
+  border-radius: 2px;
+  padding: 2px 5px;
+}
+.prose pre {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: var(--base-lightest);
+  border: 1px solid var(--base-lighter);
+  border-left: 4px solid var(--base-light);
+  border-radius: 0 4px 4px 0;
+}
+.prose pre code { background: none; padding: 0; font-size: 14px; line-height: 1.55; }
+.prose table { border-collapse: collapse; margin: 0 0 14px; font-size: 15px; }
+.prose th, .prose td { border: 1px solid var(--base-dark); padding: 8px 12px; text-align: left; }
+.prose th { background: var(--base-lightest); font-weight: 700; }
+
+code, pre { font-family: var(--mono); }
+
+/* ------------------------------------------------------------ accordions */
+
+/* USWDS accordion, on <details> so it works without JS. */
+details.usa-accordion { border-radius: 0; }
+details.usa-accordion + details.usa-accordion { margin-top: 4px; }
+.answer + details.usa-accordion { margin-top: 12px; }
+
+.usa-accordion__button {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--base-lightest);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px 16px;
+}
+.usa-accordion__button::-webkit-details-marker { display: none; }
+.usa-accordion__button:hover { background: var(--base-lighter); }
+.usa-accordion__button::after {
+  content: "+";
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary);
+  flex: 0 0 auto;
+}
+details.usa-accordion[open] > .usa-accordion__button::after { content: "\2013"; }
+
+.usa-accordion__content {
+  padding: 16px;
+  border: 1px solid var(--base-lightest);
+  border-top: none;
+  font-size: 15.5px;
+}
+.usa-accordion__content > *:first-child { margin-top: 0; }
+.usa-accordion__content > *:last-child { margin-bottom: 0; }
+
+details.usa-accordion--warning > .usa-accordion__button {
+  background: var(--warning-lighter);
+  box-shadow: inset 4px 0 0 var(--warning);
+}
+details.usa-accordion--error > .usa-accordion__button {
+  background: var(--error-lighter);
+  color: var(--error-dark);
+  box-shadow: inset 4px 0 0 var(--error);
+}
+
+/* ---------------------------------------------------------------- alerts */
+
+/* USWDS alert: 0.5rem status stripe on the left, tinted background. */
+.usa-alert {
+  border-left: 8px solid var(--info);
+  background: var(--info-lighter);
+  padding: 14px 18px;
+  margin: 0 0 16px;
+  font-size: 15.5px;
+}
+.usa-alert:last-child { margin-bottom: 0; }
+.usa-alert__heading {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.usa-alert p { margin: 0; }
+.usa-alert p + p { margin-top: 8px; }
+.usa-alert--info { border-left-color: var(--info); background: var(--info-lighter); }
+.usa-alert--warning { border-left-color: var(--warning); background: var(--warning-lighter); }
+.usa-alert--error { border-left-color: var(--error); background: var(--error-lighter); }
+.usa-alert--success { border-left-color: var(--success); background: var(--success-lighter); }
+
+/* ------------------------------------------------------------------ rows */
+
+.rows { display: flex; flex-direction: column; }
+.row-line {
+  font-size: 15px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--base-lighter);
+}
+.row-line:first-child { padding-top: 0; }
+.row-line:last-child { border-bottom: none; padding-bottom: 0; }
+.row-line .k { font-weight: 700; }
+.row-line .v { color: var(--base-dark); }
+.row-line .usa-tag { margin-right: 8px; }
+
+.chunk {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--base-lightest);
+  border-left: 4px solid var(--base-light);
+  padding: 12px 14px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* ------------------------------------------------------------ usa-table */
+
+.table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto; }
+.usa-table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.usa-table caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 8px;
+}
+.usa-table th, .usa-table td {
+  border: 1px solid var(--base-dark);
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+.usa-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--base-lightest);
+  font-weight: 700;
+}
+.usa-table tbody tr:nth-child(even) { background: #fbfbfb; }
+
+/* -------------------------------------------------------------- approval */
+
+.approval { max-width: 900px; margin: 28px 0 0; }
+.approval .usa-alert { margin-bottom: 0; }
+.approval pre {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid var(--base-dark);
+  overflow-x: auto;
+  font-size: 14px;
+}
+.approval .rationale { font-size: 15px; margin: 12px 0 0; }
+.approval .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+
+/* -------------------------------------------------------------- composer */
+
+.composer {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 18px 24px 22px;
+  border-top: 1px solid var(--base-lighter);
+  background: var(--base-lightest);
+}
+.composer label {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.usa-textarea, .usa-input, .usa-select {
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--base-dark);
+  border-radius: 0;
+  padding: 10px 12px;
+}
+.usa-textarea { flex: 1; resize: none; max-height: 200px; line-height: 1.4; }
+.composer .usa-button { padding: 13px 24px; }
+
+.error-bar {
+  margin: 0;
+  padding: 14px 24px;
+  font-size: 15.5px;
+  color: var(--error-dark);
+  background: var(--error-lighter);
+  border-top: 8px solid var(--error);
+}
+
+.busy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 0;
+  font-size: 16px;
+  color: var(--base-darker);
+}
+.spinner {
+  width: 18px; height: 18px;
+  border: 3px solid var(--base-lighter);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
+
+/* ------------------------------------------------------------------- lab */
+
+.lab { max-width: 900px; }
+.lab h2 { margin: 0 0 8px; font-family: var(--serif); font-size: 26px; color: var(--primary-darker); }
+.lab > p { margin: 0 0 24px; font-size: 16px; }
+
+.usa-fieldset {
+  border: 1px solid var(--base-lighter);
+  border-top: 4px solid var(--primary);
+  border-radius: 0 0 4px 4px;
+  padding: 20px 22px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.usa-fieldset > .usa-button { align-self: flex-start; }
+
+.usa-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.usa-label .hint { font-weight: 400; color: var(--base-dark); font-size: 14px; }
+
+.lab-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 18px;
+  align-items: end;
+}
+
+.usa-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  padding-bottom: 10px;
+}
+.usa-checkbox input { width: 20px; height: 20px; accent-color: var(--primary); }
+
+input[type="range"] { accent-color: var(--primary); height: 24px; }
+
+/* ----------------------------------------------------- radio / answer mode */
+
+/* USWDS radio: a bordered card the whole label toggles, with a ring around the
+   selected option so the current answer mode is obvious at a glance. */
+.mode-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  gap: 8px;
+}
+.usa-radio { position: relative; }
+.usa-radio__input {
+  position: absolute;
+  left: 14px;
+  top: 16px;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  margin: 0;
+}
+.usa-radio__label {
+  display: block;
+  cursor: pointer;
+  padding: 12px 14px 12px 44px;
+  border: 1px solid var(--base-lighter);
+  border-radius: 4px;
+  background: var(--white);
+}
+.usa-radio__label:hover { background: var(--base-lightest); }
+.usa-radio__input:checked + .usa-radio__label {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+  background: var(--primary-lighter);
+}
+.usa-radio__input:focus-visible + .usa-radio__label {
+  outline: 0.25rem solid var(--focus);
+  outline-offset: 0;
+}
+.usa-radio__input:disabled + .usa-radio__label {
+  cursor: not-allowed;
+  color: var(--base);
+  background: var(--base-lightest);
+}
+.mode-name { display: block; font-weight: 700; font-size: 15px; color: var(--ink); }
+.usa-radio__input:disabled + .usa-radio__label .mode-name { color: var(--base); }
+.mode-hint { display: block; font-size: 13.5px; color: var(--base-dark); margin-top: 2px; }
+
+.lab-summary { margin: 28px 0 14px; font-size: 17px; }
+.lab-hits { display: flex; flex-direction: column; gap: 4px; }
+.lab-hits details.usa-accordion + details.usa-accordion { margin-top: 0; }
+.hit-title { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.hit-title .src { color: var(--ink); }
+.hit-title .sec { color: var(--base-dark); font-weight: 400; }
+.hit-title .score { color: var(--base-dark); font-weight: 400; font-size: 14px; }
+.hit-title .score b { color: var(--ink); }
+
+.usa-sr-only {
+  position: absolute;
+  left: -999em;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.usa-summary-box .usa-alert { margin: 14px 0 0; }
+.usa-summary-box details.usa-accordion { margin-top: 14px; }
+
+/* --------------------------------------------------------------- identifier */
+
+.identifier {
+  font-size: 13px;
+  color: var(--base-dark);
+  border-top: 1px solid var(--base-lighter);
+  padding-top: 14px;
+}
+.identifier p { margin: 0 0 4px; }
+.identifier a { color: var(--primary); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  body { height: auto; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--base-lighter); padding-right: 0; }
+  .page-width { padding: 0 16px; }
+  .scroller, .tabs { padding-left: 16px; padding-right: 16px; }
+  .composer { padding: 14px 16px 18px; }
+}

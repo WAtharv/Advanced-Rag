@@ -1,0 +1,103 @@
+# Two ways to use this file:
+#
+#   docker compose up -d
+#       Infra only (Qdrant + Postgres + Redis) - the historical behaviour. Run
+#       the app on the host against these via QDRANT_URL / POSTGRES_DSN / REDIS_URL.
+#
+#   GEMINI_API_KEY=... docker compose --profile app up --build
+#       Full end-to-end stack: builds the image, runs a one-shot `ingest` job to
+#       index the corpus + seed the ops DB, then serves the API + UI on :8000.
+#
+# See DEPLOY.md for the complete deployment guide.
+
+# Shared environment for the app services (anchor; x- keys are ignored by compose).
+x-app-env: &app-env
+  APP_ENV: ${APP_ENV:-development}
+  LLM_PROVIDER: gemini
+  GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in your shell or a .env file}
+  LLM_MODEL: ${LLM_MODEL:-gemini-flash-latest}
+  LLM_FAST_MODEL: ${LLM_FAST_MODEL:-gemini-flash-lite-latest}
+  RETRIEVAL_BACKEND: gemini
+  QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+  POSTGRES_DSN: ${POSTGRES_DSN:-postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ops}}
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ops}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Schema and sample data are created by `rag-ingest --seed-sql`, which works
+    # against both PostgreSQL and the SQLite fallback.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ops}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+
+  # -------- Application services (profile "app") --------------------------------
+
+  # One-shot job: build the vector index and seed the ops DB, then exit. The API
+  # waits for this to finish successfully before it starts serving.
+  ingest:
+    build: .
+    image: advanced-rag:local
+    profiles: ["app"]
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    restart: "no"
+    # Qdrant's image has no shell health tool, so wait on its TCP port with the
+    # Python that is already in the image, then ingest. `--seed-sql` also creates
+    # the Postgres schema + sample rows (idempotent to re-run).
+    command:
+      - sh
+      - -c
+      - |
+        until python -c "import socket; socket.create_connection(('qdrant', 6333), 2)" 2>/dev/null; do
+          echo "waiting for qdrant..."; sleep 2;
+        done
+        rag-ingest --corpus /app/data/corpus --seed-sql
+
+  api:
+    build: .
+    image: advanced-rag:local
+    profiles: ["app"]
+    environment:
+      <<: *app-env
+      REDIS_URL: redis://redis:6379/0
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      ingest:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:
+  postgres_data:
