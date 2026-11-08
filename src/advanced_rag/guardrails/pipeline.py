@@ -125,7 +125,10 @@ class Guardrails:
             return result
         result.record(GuardrailOutcome(layer="injection", passed=True))
 
-        if not use_llm:
+        if not use_llm or not getattr(self.settings, "enable_guardrails_llm_input", True):
+            if getattr(self.settings, "enable_guardrails_llm_input", True) is False:
+                result.record(_skipped("intent", "LLM input review disabled in configuration"))
+                result.record(_skipped("scope", "LLM scope review disabled in configuration"))
             return result
 
         # Layers 5 and 6 are the only two independent model calls in a request -
@@ -204,7 +207,9 @@ class Guardrails:
             )
         )
 
-        if not use_llm:
+        if not use_llm or not getattr(self.settings, "enable_guardrails_llm_output", True):
+            if getattr(self.settings, "enable_guardrails_llm_output", True) is False:
+                result.record(_skipped("output_review", "LLM output safety review disabled in configuration"))
             return result
 
         # Layer 9 - LLM review for grounding and unflagged danger.

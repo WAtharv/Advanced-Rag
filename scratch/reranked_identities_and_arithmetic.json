@@ -1,0 +1,136 @@
+{
+  "dense_reranked_top5": [
+    {
+      "source": "sre/runbooks/kubernetes/oomkilled.md",
+      "section": "3. Symptoms",
+      "retrieval_score": 0.7309,
+      "rerank_score": 0.9987,
+      "retrieval_rank": 4,
+      "text": "3. Symptoms\n- `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackOff` with exit code `137`.\n- Prometheus alert `KubePodOOMKilled` or `ContainerOOMKilled` firing.\n- Kernel dmesg logs report `Memory cgroup out of memory: Kill process ... score ...`."
+    },
+    {
+      "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+      "section": "3. Symptoms",
+      "retrieval_score": 0.7061,
+      "rerank_score": 0.9954,
+      "retrieval_rank": 8,
+      "text": "3. Symptoms\n- Prometheus memory usage surges dramatically; pods restart with `OOMKilled` (exit code 137).\n- Prometheus TSDB head series metric `prometheus_tsdb_head_series` climbing steeply.\n- Alert `PrometheusTSDBCardinalityExplosion` firing."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+      "section": "8. Expected Outputs",
+      "retrieval_score": 0.7412,
+      "rerank_score": 0.9883,
+      "retrieval_rank": 2,
+      "text": "8. Expected Outputs\n- **Exit Code 1:** General application error / uncaught runtime exception (inspect `--previous` logs for stack traces).\n- **Exit Code 137:** Process received SIGKILL (`kill -9`), typically triggered by kernel OOM killer or liveness probe failure timeout.\n- **Exit Code 143:** Process received SIGTERM (`kill -15`), terminated gracefully by Kubernetes or external orchestrator.\n- **Exit Code 126 / 127:** Command invoked cannot execute or binary not found in container filesystem.\n- **Exit Code 0:** Container completed and exited successfully, but `restartPolicy` is `Always`, causing Kubernetes to restart it."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+      "section": "9. Decision Tree",
+      "retrieval_score": 0.7454,
+      "rerank_score": 0.976,
+      "retrieval_rank": 1,
+      "text": "9. Decision Tree\n```\n                         [Pod in CrashLoopBackOff]\n                                     |\n                    Inspect Exit Code & Previous Logs\n                                     |\n        +----------------------------+----------------------------+\n        |                            |                            |\n  [Exit Code 137]              [Exit Code 127]              [Exit Code 1]\n        |                            |                            |\n  Check OOMKilled:             Binary not found in           Application stack trace:\n  - If OOM: raise memory       image; verify entrypoint      - ConfigMap/Secret missing?\n  - If Liveness: check probe   and PodSpec command           - DB connection refused?\n```"
+    },
+    {
+      "source": "sre/runbooks/kubernetes/oomkilled.md",
+      "section": "9. Decision Tree",
+      "retrieval_score": 0.7,
+      "rerank_score": 0.9019,
+      "retrieval_rank": 13,
+      "text": "9. Decision Tree\n```\n                         [Container Exited 137 / OOMKilled]\n                                         |\n                       Check Scope: Container vs Node\n                                         |\n         +-------------------------------+-------------------------------+\n         |                                                               |\n  [Container cgroup OOM]                                        [Node MemoryPressure]\n         |                                                               |\n  Inspect Memory Trend:                                          Identify High-Memory Pods:\n  - Linear steady growth -> Memory Leak (Profile App)            - Move batch jobs off node\n  - Spike during load -> Increase Memory Limit                   - Add cluster node capacity\n```"
+    }
+  ],
+  "sparse_reranked_top5": [
+    {
+      "source": "sre/runbooks/kubernetes/oomkilled.md",
+      "section": "3. Symptoms",
+      "retrieval_score": 31.3695,
+      "rerank_score": 0.9987,
+      "retrieval_rank": 2,
+      "text": "3. Symptoms\n- `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackOff` with exit code `137`.\n- Prometheus alert `KubePodOOMKilled` or `ContainerOOMKilled` firing.\n- Kernel dmesg logs report `Memory cgroup out of memory: Kill process ... score ...`."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/oomkilled.md",
+      "section": "7. Read-Only Investigation Commands",
+      "retrieval_score": 20.0683,
+      "rerank_score": 0.9967,
+      "retrieval_rank": 8,
+      "text": "7. Read-Only Investigation Commands\n```bash\n# 1. Verify OOMKilled status and exit code 137\nkubectl get pod <pod-name> -n <namespace> -o jsonpath='{range .status.containerStatuses[*]}{.name}{\"\tExitCode:\"}{.lastState.terminated.exitCode}{\"\tReason:\"}{.lastState.terminated.reason}{\"\n\"}{end}'\n\n# 2. Inspect configured memory requests and limits\nkubectl get pod <pod-name> -n <namespace> -o jsonpath='{range .spec.containers[*]}{.name}{\"\tRequests:\"}{.resources.requests.memory}{\"\tLimits:\"}{.resources.limits.memory}{\"\n\"}{end}'\n\n# 3. Check node memory pressure condition\nkubectl get node <node-name> -o jsonpath='{.status.conditions[?(@.type==\"MemoryPressure\")].status}'\n\n# 4. Check kernel dmesg for OOM killer invocations on the host node (if node access available)\nkubectl describe node <node-name> | grep -A 5 \"Allocated resources\"\n\n# 5. PromQL query: Historical working set memory usage leading to crash\n```"
+    },
+    {
+      "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+      "section": "3. Symptoms",
+      "retrieval_score": 23.8167,
+      "rerank_score": 0.9954,
+      "retrieval_rank": 6,
+      "text": "3. Symptoms\n- Prometheus memory usage surges dramatically; pods restart with `OOMKilled` (exit code 137).\n- Prometheus TSDB head series metric `prometheus_tsdb_head_series` climbing steeply.\n- Alert `PrometheusTSDBCardinalityExplosion` firing."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+      "section": "8. Expected Outputs",
+      "retrieval_score": 31.9673,
+      "rerank_score": 0.9883,
+      "retrieval_rank": 1,
+      "text": "8. Expected Outputs\n- **Exit Code 1:** General application error / uncaught runtime exception (inspect `--previous` logs for stack traces).\n- **Exit Code 137:** Process received SIGKILL (`kill -9`), typically triggered by kernel OOM killer or liveness probe failure timeout.\n- **Exit Code 143:** Process received SIGTERM (`kill -15`), terminated gracefully by Kubernetes or external orchestrator.\n- **Exit Code 126 / 127:** Command invoked cannot execute or binary not found in container filesystem.\n- **Exit Code 0:** Container completed and exited successfully, but `restartPolicy` is `Always`, causing Kubernetes to restart it."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+      "section": "9. Decision Tree",
+      "retrieval_score": 26.355,
+      "rerank_score": 0.976,
+      "retrieval_rank": 3,
+      "text": "9. Decision Tree\n```\n                         [Pod in CrashLoopBackOff]\n                                     |\n                    Inspect Exit Code & Previous Logs\n                                     |\n        +----------------------------+----------------------------+\n        |                            |                            |\n  [Exit Code 137]              [Exit Code 127]              [Exit Code 1]\n        |                            |                            |\n  Check OOMKilled:             Binary not found in           Application stack trace:\n  - If OOM: raise memory       image; verify entrypoint      - ConfigMap/Secret missing?\n  - If Liveness: check probe   and PodSpec command           - DB connection refused?\n```"
+    }
+  ],
+  "hybrid_reranked_top5": [
+    {
+      "source": "sre/runbooks/kubernetes/oomkilled.md",
+      "section": "3. Symptoms",
+      "retrieval_score": 0.5333,
+      "rerank_score": 0.9987,
+      "retrieval_rank": 3,
+      "text": "3. Symptoms\n- `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackOff` with exit code `137`.\n- Prometheus alert `KubePodOOMKilled` or `ContainerOOMKilled` firing.\n- Kernel dmesg logs report `Memory cgroup out of memory: Kill process ... score ...`."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/oomkilled.md",
+      "section": "7. Read-Only Investigation Commands",
+      "retrieval_score": 0.1111,
+      "rerank_score": 0.9967,
+      "retrieval_rank": 13,
+      "text": "7. Read-Only Investigation Commands\n```bash\n# 1. Verify OOMKilled status and exit code 137\nkubectl get pod <pod-name> -n <namespace> -o jsonpath='{range .status.containerStatuses[*]}{.name}{\"\tExitCode:\"}{.lastState.terminated.exitCode}{\"\tReason:\"}{.lastState.terminated.reason}{\"\n\"}{end}'\n\n# 2. Inspect configured memory requests and limits\nkubectl get pod <pod-name> -n <namespace> -o jsonpath='{range .spec.containers[*]}{.name}{\"\tRequests:\"}{.resources.requests.memory}{\"\tLimits:\"}{.resources.limits.memory}{\"\n\"}{end}'\n\n# 3. Check node memory pressure condition\nkubectl get node <node-name> -o jsonpath='{.status.conditions[?(@.type==\"MemoryPressure\")].status}'\n\n# 4. Check kernel dmesg for OOM killer invocations on the host node (if node access available)\nkubectl describe node <node-name> | grep -A 5 \"Allocated resources\"\n\n# 5. PromQL query: Historical working set memory usage leading to crash\n```"
+    },
+    {
+      "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+      "section": "3. Symptoms",
+      "retrieval_score": 0.254,
+      "rerank_score": 0.9954,
+      "retrieval_rank": 5,
+      "text": "3. Symptoms\n- Prometheus memory usage surges dramatically; pods restart with `OOMKilled` (exit code 137).\n- Prometheus TSDB head series metric `prometheus_tsdb_head_series` climbing steeply.\n- Alert `PrometheusTSDBCardinalityExplosion` firing."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+      "section": "8. Expected Outputs",
+      "retrieval_score": 0.8333,
+      "rerank_score": 0.9883,
+      "retrieval_rank": 1,
+      "text": "8. Expected Outputs\n- **Exit Code 1:** General application error / uncaught runtime exception (inspect `--previous` logs for stack traces).\n- **Exit Code 137:** Process received SIGKILL (`kill -9`), typically triggered by kernel OOM killer or liveness probe failure timeout.\n- **Exit Code 143:** Process received SIGTERM (`kill -15`), terminated gracefully by Kubernetes or external orchestrator.\n- **Exit Code 126 / 127:** Command invoked cannot execute or binary not found in container filesystem.\n- **Exit Code 0:** Container completed and exited successfully, but `restartPolicy` is `Always`, causing Kubernetes to restart it."
+    },
+    {
+      "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+      "section": "9. Decision Tree",
+      "retrieval_score": 0.75,
+      "rerank_score": 0.976,
+      "retrieval_rank": 2,
+      "text": "9. Decision Tree\n```\n                         [Pod in CrashLoopBackOff]\n                                     |\n                    Inspect Exit Code & Previous Logs\n                                     |\n        +----------------------------+----------------------------+\n        |                            |                            |\n  [Exit Code 137]              [Exit Code 127]              [Exit Code 1]\n        |                            |                            |\n  Check OOMKilled:             Binary not found in           Application stack trace:\n  - If OOM: raise memory       image; verify entrypoint      - ConfigMap/Secret missing?\n  - If Liveness: check probe   and PodSpec command           - DB connection refused?\n```"
+    }
+  ],
+  "arithmetic": {
+    "dense_count": 19,
+    "sparse_count": 18,
+    "shared": 7,
+    "unique_dense": 12,
+    "unique_sparse": 11,
+    "union": 30
+  }
+}

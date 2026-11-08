@@ -1,0 +1,61 @@
+---
+title: "Helm and Kubernetes Version Skew Policy"
+category: "troubleshooting"
+component: "compatibility"
+helm_version: "4.3.1"
+source_repository: "https://github.com/helm/helm-www"
+source_ref: "main"
+source_commit: "60d4db89421147aec9fc3fcef9e2d49e2729f50b"
+source_url: "https://helm.sh/docs/topics/version_skew/"
+source_version: "4.3.1"
+retrieved_at: "2026-11-08T04:55:44.197718+00:00"
+spdx_license: "CC-BY-4.0"
+attribution: "Copyright The Helm Authors"
+content_hash: "49a025ae8b6a0ca30087d0a8c338aab4d9f767d55f5ddbb5ab8aecea64bbf969"
+document_type: "concept"
+doc_type: "concept"
+---
+
+This document describes the maximum version skew supported between Helm 4 and
+Kubernetes.
+
+## Supported Versions
+
+Helm versions are expressed as `x.y.z`, where `x` is the major version, `y` is
+the minor version, and `z` is the patch version, following [Semantic
+Versioning](https://semver.org/spec/v2.0.0.html) terminology.
+
+The Helm project maintains a release branch for the most recent minor release.
+Applicable fixes, including security fixes, are cherry-picked into the release
+branch, depending on severity and feasibility. More details can be found in
+[Helm's release policy](/community/release_policy).
+
+## Supported Version Skew
+
+When a new version of Helm is released, it is compiled against a particular
+minor version of Kubernetes. For example, Helm v4.0.0 interacts with Kubernetes
+using the Kubernetes 1.34.1 client, so it is compatible with Kubernetes 1.34.
+
+As of Helm 4, Helm is assumed to be compatible with `n-3` versions of Kubernetes
+it was compiled against.
+
+For example, if you are using a version of Helm 4 that was compiled against the
+Kubernetes v1.35 client APIs, then it should be safe to use with Kubernetes v1.35,
+v1.34, v1.33, and v1.32.
+
+It is not recommended to use Helm with a version of Kubernetes that is newer
+than the version it was compiled against, as Helm does not make any forward
+compatibility guarantees.
+
+If you choose to use Helm with a version of Kubernetes that it does not support,
+you are using it at your own risk.
+
+Please refer to the table below to determine what version of Helm is compatible
+with your cluster.
+
+| Helm Version | Supported Kubernetes Versions |
+|--------------|-------------------------------|
+| 4.3.x        | 1.37.x - 1.34.x               |
+| 4.2.x        | 1.36.x - 1.33.x               |
+| 4.1.x        | 1.35.x - 1.32.x               |
+| 4.0.x        | 1.34.x - 1.31.x               |

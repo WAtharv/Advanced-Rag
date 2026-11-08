@@ -34,7 +34,13 @@ def isolated_env(tmp_path, monkeypatch):
     upload_dir = tmp_path / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
     registry_file = upload_dir / "registry.json"
-    corpus_dir = Path("data/corpus")
+    corpus_dir = tmp_path / "corpus"
+    sample_dir = corpus_dir / "kubernetes" / "troubleshooting"
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    (sample_dir / "crashloopbackoff.md").write_text(
+        "---\ntitle: Runbook - Pod CrashLoopBackOff\ndoc_type: runbook\n---\n\n# Pod CrashLoopBackOff\n\nTriage steps...",
+        encoding="utf-8",
+    )
 
     test_registry = DocumentRegistry(registry_path=registry_file, corpus_dir=corpus_dir)
     monkeypatch.setattr("advanced_rag.api.main.get_registry", lambda: test_registry)
@@ -287,7 +293,7 @@ def test_list_documents_includes_builtin_and_uploaded(isolated_env):
     resp = client.get("/documents")
     assert resp.status_code == 200
     docs = resp.json()
-    assert len(docs) >= 10  # 9 built-in + 1 uploaded
+    assert len(docs) >= 2  # built-in + uploaded
 
     origins = {d["origin"] for d in docs}
     assert "built-in" in origins

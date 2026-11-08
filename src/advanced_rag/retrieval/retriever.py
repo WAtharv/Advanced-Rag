@@ -22,6 +22,7 @@ points to compare strategies without generating anything."""
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
 
 from advanced_rag.config import Settings, get_settings
@@ -59,6 +60,9 @@ class RetrievalResult:
     #: True only when a real cross-encoder scored the results, so callers can
     #: tell a strong rerank score from a lexical-overlap stand-in.
     cross_encoder: bool = False
+    elapsed_ms: float = 0.0
+    hyde_ms: float | None = None
+    rerank_ms: float | None = None
 
     @property
     def top_score(self) -> float:
@@ -125,19 +129,26 @@ class Retriever:
         question: str,
         *,
         use_hyde: bool | None = None,
-        rerank: bool = True,
+        rerank: bool | None = None,
         mode: str = "hybrid",
-        fusion: str = "weighted",
+        fusion: str | None = None,
         top_k: int | None = None,
         top_n: int | None = None,
         doc_type: str | None = None,
+        filter_=None,
     ) -> RetrievalResult:
+        t0 = time.perf_counter()
         use_hyde = self.settings.enable_hyde if use_hyde is None else use_hyde
+        should_rerank = self.settings.enable_rerank if rerank is None else rerank
+        effective_fusion = fusion if fusion is not None else getattr(self.settings, "hybrid_fusion", "rrf")
     
         hyde_doc: str | None = None
+        hyde_ms: float | None = None
         query = question
         if use_hyde:
+            t_hyde = time.perf_counter()
             hyde_doc = self.generate_hyde(question)
+            hyde_ms = round((time.perf_counter() - t_hyde) * 1000.0, 2)
             if hyde_doc:
                 # Keep the question in the query so lexical matching still has the
                 # user's exact error strings and resource names to work with.
@@ -145,19 +156,35 @@ class Retriever:
 
         chunks = self.store.search(
             query, top_k=top_k or self.settings.retrieve_top_k, mode=mode,
-            fusion=fusion, doc_type=doc_type,
+            fusion=effective_fusion, doc_type=doc_type, filter_=filter_,
         )
-        result = RetrievalResult(
-            chunks=chunks, query_used=query, hyde_document=hyde_doc, mode=mode
-        )
+        for rank, chunk in enumerate(chunks, start=1):
+            chunk.retrieval_rank = rank
 
-        if rerank and chunks:
+        rerank_ms: float | None = None
+        reranked = False
+        cross_encoder = False
+        if should_rerank and chunks:
+            t_rerank = time.perf_counter()
             # Rerank against the real question - the HyDE passage is a retrieval
             # aid, and scoring against it rewards documents similar to a guess.
-            result.chunks = self.rerank(question, chunks, top_n=top_n)
-            result.reranked = True
-            result.cross_encoder = self.reranker.is_cross_encoder
-        return result
+            chunks = self.rerank(question, chunks, top_n=top_n)
+            rerank_ms = round((time.perf_counter() - t_rerank) * 1000.0, 2)
+            reranked = True
+            cross_encoder = self.reranker.is_cross_encoder
+
+        total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        return RetrievalResult(
+            chunks=chunks,
+            query_used=query,
+            hyde_document=hyde_doc,
+            mode=mode,
+            reranked=reranked,
+            cross_encoder=cross_encoder,
+            elapsed_ms=total_ms,
+            hyde_ms=hyde_ms,
+            rerank_ms=rerank_ms,
+        )
     
     """
     Question:

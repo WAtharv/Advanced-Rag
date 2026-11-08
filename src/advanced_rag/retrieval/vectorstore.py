@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 from qdrant_client import QdrantClient, models
@@ -212,21 +213,14 @@ class HybridStore:
             logger.info("Indexed %d/%d chunks", written, len(chunks))
         return written
 
-    def get_point_ids_by_source(self, source: str) -> list[str]:
-        """Retrieve all Qdrant point IDs associated with a specific document source."""
-        if not self.client.collection_exists(self.collection):
-            return []
-
-        filter_ = models.Filter(
-            must=[models.FieldCondition(key="source", match=models.MatchValue(value=source))]
-        )
+    def _scroll_point_ids(self, scroll_filter: models.Filter) -> list[str]:
+        """Internal helper to scroll and return point IDs matching a filter."""
         point_ids: list[str] = []
         offset = None
-
         while True:
             records, next_offset = self.client.scroll(
                 collection_name=self.collection,
-                scroll_filter=filter_,
+                scroll_filter=scroll_filter,
                 limit=250,
                 with_payload=False,
                 with_vectors=False,
@@ -236,8 +230,101 @@ class HybridStore:
             if next_offset is None or not records:
                 break
             offset = next_offset
-
         return point_ids
+
+    def get_point_ids(self, identifier: str) -> list[str]:
+        """Retrieve point IDs for a document by source path, document_id, or canonical path."""
+        if not identifier or not identifier.strip():
+            return []
+        if not self.client.collection_exists(self.collection):
+            return []
+
+        ident = identifier.strip()
+
+        # 1. Search by exact source
+        filter_source = models.Filter(
+            must=[models.FieldCondition(key="source", match=models.MatchValue(value=ident))]
+        )
+        pids = self._scroll_point_ids(filter_source)
+        if pids:
+            return pids
+
+        # 2. Search by document_id
+        filter_doc_id = models.Filter(
+            must=[models.FieldCondition(key="document_id", match=models.MatchValue(value=ident))]
+        )
+        pids = self._scroll_point_ids(filter_doc_id)
+        if pids:
+            return pids
+
+        # 3. Search by normalized POSIX path
+        normalized = Path(ident).as_posix().lstrip("./")
+        if normalized != ident:
+            filter_norm = models.Filter(
+                must=[models.FieldCondition(key="source", match=models.MatchValue(value=normalized))]
+            )
+            pids = self._scroll_point_ids(filter_norm)
+            if pids:
+                return pids
+
+        # 4. Check relative to data/corpus if path was absolute or included data/corpus
+        if "data/corpus/" in normalized:
+            rel = normalized.split("data/corpus/", 1)[1]
+            filter_rel = models.Filter(
+                must=[models.FieldCondition(key="source", match=models.MatchValue(value=rel))]
+            )
+            pids = self._scroll_point_ids(filter_rel)
+            if pids:
+                return pids
+
+        return []
+
+    def get_point_ids_by_source(self, source: str) -> list[str]:
+        """Retrieve all Qdrant point IDs associated with a specific document source."""
+        return self.get_point_ids(source)
+
+    def get_indexed_documents(self) -> dict[str, dict[str, Any]]:
+        """Retrieve an aggregated mapping of all indexed documents in the collection."""
+        if not self.client.collection_exists(self.collection):
+            return {}
+
+        docs: dict[str, dict[str, Any]] = {}
+        offset = None
+
+        while True:
+            records, next_offset = self.client.scroll(
+                collection_name=self.collection,
+                limit=500,
+                with_payload=["source", "document_id", "content_hash", "title", "file_type"],
+                with_vectors=False,
+                offset=offset,
+            )
+            for r in records:
+                src = r.payload.get("source") if r.payload else None
+                if not src:
+                    continue
+                if src not in docs:
+                    docs[src] = {
+                        "source": src,
+                        "document_id": r.payload.get("document_id", ""),
+                        "title": r.payload.get("title", ""),
+                        "file_type": r.payload.get("file_type", ""),
+                        "point_ids": [],
+                        "content_hashes": set(),
+                    }
+                docs[src]["point_ids"].append(str(r.id))
+                ch = r.payload.get("content_hash")
+                if ch:
+                    docs[src]["content_hashes"].add(ch)
+
+            if next_offset is None or not records:
+                break
+            offset = next_offset
+
+        for item in docs.values():
+            item["chunk_count"] = len(item["point_ids"])
+
+        return docs
 
     def delete_points(self, point_ids: Sequence[str]) -> int:
         """Delete specific points from Qdrant by their UUIDs."""
@@ -253,14 +340,40 @@ class HybridStore:
         logger.info("Deleted %d points from %s", len(point_ids), self.collection)
         return len(point_ids)
 
-    def delete_document(self, source: str) -> dict[str, Any]:
-        """Delete all chunks belonging to a specific document source."""
-        point_ids = self.get_point_ids_by_source(source)
+    def delete_document(self, identifier: str, dry_run: bool = False) -> dict[str, Any]:
+        """Delete all chunks belonging to a specific document source or document_id with safety controls."""
+        if not identifier or not identifier.strip():
+            raise ValueError("Document identifier cannot be empty.")
+
+        clean_id = identifier.strip()
+        if clean_id in ("*", "/", "\\", ".", "~") or clean_id.startswith("*"):
+            raise ValueError(
+                f"Unsafe or ambiguous document identifier '{identifier}'. Wildcards and root paths are forbidden."
+            )
+
+        if ".." in clean_id:
+            raise ValueError(f"Path traversal detected in identifier '{identifier}'.")
+
+        if self.collection in ("k8s_ops", "k8s_ops_bge_small"):
+            raise ValueError(f"Deletion forbidden on protected baseline collection '{self.collection}'.")
+
+        point_ids = self.get_point_ids(clean_id)
+        if dry_run:
+            return {
+                "source": clean_id,
+                "deleted_chunks": 0,
+                "matched_points": len(point_ids),
+                "found": bool(point_ids),
+                "dry_run": True,
+            }
+
         deleted_count = self.delete_points(point_ids) if point_ids else 0
         return {
-            "source": source,
+            "source": clean_id,
             "deleted_chunks": deleted_count,
+            "matched_points": len(point_ids),
             "found": bool(point_ids),
+            "dry_run": False,
         }
 
     def replace_document(
@@ -319,8 +432,9 @@ class HybridStore:
         *,
         top_k: int | None = None,
         mode: str = "hybrid",
-        fusion: str = "weighted",
+        fusion: str | None = None,
         doc_type: str | None = None,
+        filter_: models.Filter | None = None,
     ) -> list[RetrievedChunk]:
         """
         Main retrival function 
@@ -377,7 +491,7 @@ class HybridStore:
         else:
             logger.info("Serving search as hybrid (dense + sparse) on collection '%s'", target_collection)
 
-        query_filter = _doc_type_filter(doc_type)
+        query_filter = filter_ if filter_ is not None else _doc_type_filter(doc_type)
 
         orig_collection = self.collection
         try:
@@ -386,7 +500,8 @@ class HybridStore:
                 return self._single(query, top_k, DENSE, query_filter)
             if mode == "sparse":
                 return self._single(query, top_k, SPARSE, query_filter)
-            if fusion == "rrf":
+            effective_fusion = fusion if fusion is not None else getattr(self.settings, "hybrid_fusion", "rrf")
+            if effective_fusion == "rrf":
                 return self._hybrid_rrf(query, top_k, query_filter)
             return self._hybrid_weighted(query, top_k, query_filter)
         finally:
@@ -566,6 +681,23 @@ def _to_retrieved(point: Any, score: float) -> RetrievedChunk:
 
 
 _store: HybridStore | None = None
+
+
+def get_active_store() -> HybridStore | None:
+    """Return the global store singleton if already initialized and active, else None."""
+    global _store
+    return _store
+
+
+def reset_store() -> None:
+    """Close and clear the global store singleton to free file locks."""
+    global _store
+    if _store is not None:
+        try:
+            _store.close()
+        except Exception:
+            pass
+        _store = None
 
 
 def get_store() -> HybridStore:

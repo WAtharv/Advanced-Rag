@@ -1,0 +1,80 @@
+---
+title: "Helm Rollback Command Reference"
+category: "operations"
+component: "release-management"
+helm_version: "4.3.1"
+source_repository: "https://github.com/helm/helm-www"
+source_ref: "main"
+source_commit: "60d4db89421147aec9fc3fcef9e2d49e2729f50b"
+source_url: "https://helm.sh/docs/helm/helm_rollback/"
+source_version: "4.3.1"
+retrieved_at: "2026-11-08T04:55:44.197718+00:00"
+spdx_license: "CC-BY-4.0"
+attribution: "Copyright The Helm Authors"
+content_hash: "51bd7b29edaeb1586302483ae2821190f37a0c1e57bff6b094392946b8a9e8b9"
+document_type: "reference"
+doc_type: "reference"
+---
+
+roll back a release to a previous revision
+
+### Synopsis
+
+This command rolls back a release to a previous revision.
+
+The first argument of the rollback command is the name of a release, and the
+second is a revision (version) number. If this argument is omitted or set to
+0, it will roll back to the previous release.
+
+To see revision numbers, run 'helm history RELEASE'.
+
+```
+helm rollback <RELEASE> [REVISION] [flags]
+```
+
+### Options
+
+```
+      --cleanup-on-fail               allow deletion of new resources created in this rollback when rollback fails
+      --description string            add a custom description for the rollback (max 256 characters)
+      --dry-run string[="unset"]      simulates the operation without persisting changes. Must be one of: "none" (default), "client", or "server". '--dry-run=none' executes the operation normally and persists changes (no simulation). '--dry-run=client' simulates the operation client-side only and avoids cluster connections. '--dry-run=server' simulates the operation on the server, requiring cluster connectivity. (default "none")
+      --force-conflicts               if set server-side apply will force changes against conflicts
+      --force-replace                 force resource updates by replacement
+  -h, --help                          help for rollback
+      --history-max int               limit the maximum number of revisions saved per release. Use 0 for no limit (default 10)
+      --no-hooks                      prevent hooks from running during rollback
+      --server-side string            must be "true", "false" or "auto". Object updates run in the server instead of the client ("auto" defaults the value from the previous chart release's method) (default "auto")
+      --timeout duration              time to wait for any individual Kubernetes operation (like Jobs for hooks) (default 5m0s)
+      --wait WaitStrategy[=watcher]   wait until resources are ready (up to --timeout). Use '--wait' alone for 'watcher' strategy, or specify one of: 'watcher', 'hookOnly', 'legacy'. Default when flag is omitted: 'hookOnly'. (default hookOnly)
+      --wait-for-jobs                 if set and --wait enabled, will wait until all Jobs have been completed before marking the release as successful. It will wait for as long as --timeout
+```
+
+### Options inherited from parent commands
+
+```
+      --burst-limit int                 client-side default throttling limit (default 100)
+      --color string                    use colored output (never, auto, always) (default "auto")
+      --colour string                   use colored output (never, auto, always) (default "auto")
+      --content-cache string            path to the directory containing cached content (e.g. charts) (default "~/.cache/helm/content")
+      --debug                           enable verbose output
+      --kube-apiserver string           the address and the port for the Kubernetes API server
+      --kube-as-group stringArray       group to impersonate for the operation, this flag can be repeated to specify multiple groups.
+      --kube-as-user string             username to impersonate for the operation
+      --kube-ca-file string             the certificate authority file for the Kubernetes API server connection
+      --kube-context string             name of the kubeconfig context to use
+      --kube-insecure-skip-tls-verify   if true, the Kubernetes API server's certificate will not be checked for validity. This will make your HTTPS connections insecure
+      --kube-tls-server-name string     server name to use for Kubernetes API server certificate validation. If it is not provided, the hostname used to contact the server is used
+      --kube-token string               bearer token used for authentication
+      --kubeconfig string               path to the kubeconfig file
+  -n, --namespace string                namespace scope for this request
+      --qps float32                     queries per second used when communicating with the Kubernetes API, not including bursting
+      --registry-config string          path to the registry config file (default "~/.config/helm/registry/config.json")
+      --repository-cache string         path to the directory containing cached repository indexes (default "~/.cache/helm/repository")
+      --repository-config string        path to the file containing repository names and URLs (default "~/.config/helm/repositories.yaml")
+```
+
+### SEE ALSO
+
+* [helm](/helm/helm.md)	 - The Helm package manager for Kubernetes.
+
+###### Auto generated by spf13/cobra on 15-Oct-2026

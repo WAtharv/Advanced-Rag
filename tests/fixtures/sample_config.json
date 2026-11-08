@@ -1,0 +1,25 @@
+{
+  "cluster": "prod-useast1",
+  "version": "1.37.0",
+  "environment": "production",
+  "networking": {
+    "cni": "cilium",
+    "pod_cidr": "10.244.0.0/16",
+    "service_cidr": "10.96.0.0/12"
+  },
+  "alerts": [
+    {
+      "name": "NodeMemoryPressure",
+      "severity": "critical",
+      "threshold": "90%",
+      "action": "Trigger scale up or evict low-priority workloads"
+    },
+    {
+      "name": "KubeletDown",
+      "severity": "critical",
+      "threshold": "3m",
+      "action": "Check node host metrics and kubelet systemd service status"
+    }
+  ]
+}
+

@@ -266,8 +266,8 @@ def test_deterministic_chunk_ids_across_all_formats(tmp_path: Path):
 
 
 def test_existing_markdown_corpus_baseline():
-    """Verify that the existing 9 markdown files in data/corpus still load exactly 82 chunks."""
-    corpus_docs = load_corpus(Path("data/corpus"))
+    """Verify that the 9 legacy markdown files in data/legacy_corpus_backup load exactly 82 chunks."""
+    corpus_docs = load_corpus(Path("data/legacy_corpus_backup"))
     assert len(corpus_docs) == 9
     chunks = chunk_corpus(corpus_docs)
     assert len(chunks) == 82

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from advanced_rag.ingestion.extractors.base import BaseExtractor, Document
+from advanced_rag.ingestion.extractors.cleaner import is_stack_trace_or_log, normalize_text
 from advanced_rag.ingestion.extractors.csv import CsvExtractor
 from advanced_rag.ingestion.extractors.docx import DocxExtractor
 from advanced_rag.ingestion.extractors.factory import EXTRACTOR_REGISTRY, get_extractor
@@ -24,6 +25,8 @@ __all__ = [
     "PdfExtractor",
     "TextExtractor",
     "get_extractor",
+    "is_stack_trace_or_log",
+    "normalize_text",
     "parse_front_matter",
 ]
 

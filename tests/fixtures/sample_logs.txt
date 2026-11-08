@@ -1,0 +1,11 @@
+2026-11-08T10:00:00Z [INFO] Service started on port 8080
+2026-11-08T10:05:22Z [WARN] Database pool connection threshold reached: 92%
+2026-11-08T10:07:45Z [ERROR] Unhandled exception occurred in worker thread:
+Traceback (most recent call last):
+  File "/app/workers/ingest.py", line 142, in process_batch
+    response = client.post("/v1/chunks", json=payload)
+  File "/app/client/http.py", line 88, in post
+    raise ConnectionTimeoutError("Connection timed out after 30000ms")
+ConnectionTimeoutError: Connection timed out after 30000ms
+2026-11-08T10:08:00Z [INFO] Worker restart initiated by supervisor
+

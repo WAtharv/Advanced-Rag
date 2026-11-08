@@ -520,21 +520,23 @@
 
   // ------------------------------------------------------------- retrieval
 
-  function labHit(hit, index, authoritative) {
+  function labHit(hit, index, authoritative, reranked) {
     var retrieval = html`retrieval <b>${hit.retrieval_score.toFixed(3)}</b>`;
     var score;
-    if (hit.rerank_score === null || hit.rerank_score === undefined) {
+    var origRank = (hit.retrieval_rank !== undefined && hit.retrieval_rank !== null)
+      ? html`<span class="orig-rank" style="color: var(--base-dark); font-size: 13px;">(orig rank #${hit.retrieval_rank})</span>`
+      : "";
+
+    if (!reranked || hit.rerank_score === null || hit.rerank_score === undefined) {
       score = retrieval;
     } else if (authoritative) {
-      score = html`rerank <b>${hit.rerank_score.toFixed(3)}</b> · retrieval
-        ${hit.retrieval_score.toFixed(3)}`;
+      score = html`rerank <b>${hit.rerank_score.toFixed(3)}</b> · retrieval ${hit.retrieval_score.toFixed(3)} ${origRank}`;
     } else {
-      score = html`${retrieval} · rerank ${hit.rerank_score.toFixed(3)}
-        (not used for ordering)`;
+      score = html`${retrieval} · rerank ${hit.rerank_score.toFixed(3)} (not used for ordering) ${origRank}`;
     }
 
     var title = html`<span class="hit-title">
-      <span class="src">${index + 1}. ${hit.source}</span>
+      <span class="src">#${index + 1}. ${hit.source}</span>
       <span class="sec">› ${hit.section}</span>
       <span class="score">— ${score}</span>
     </span>`;
@@ -545,6 +547,7 @@
     // Which score actually determined this order? Showing the rerank score
     // first when it did not drive the sort makes a correct list look broken.
     var authoritative = Boolean(result.rerank_is_authoritative);
+    var reranked = Boolean(result.reranked);
     var parts = [];
 
     if (result.hyde_document) {
@@ -556,9 +559,27 @@
       );
     }
 
+    var lat = result.latency_ms || {};
+    var totalLatency = (lat.total !== undefined && lat.total !== null) ? `${lat.total} ms` : "N/A";
+    var hydeLatency = (lat.hyde !== undefined && lat.hyde !== null) ? `${lat.hyde} ms` : "N/A";
+    var rerankLatency = (lat.rerank !== undefined && lat.rerank !== null) ? `${lat.rerank} ms` : "N/A";
+    var mode = result.mode || $("lab-mode").value;
+    var fusion = (mode === "hybrid") ? (result.fusion || $("lab-fusion").value) : null;
+    var candidateCount = result.candidate_count !== undefined ? result.candidate_count : result.results.length;
+    var displayedCount = result.result_count !== undefined ? result.result_count : result.results.length;
+    var modeBadge = fusion ? `${mode} (${fusion})` : mode;
+
     parts.push(
-      html`<p class="lab-summary"><b>${result.results.length} results</b> — ordered by
-      <code>${authoritative ? "rerank" : "retrieval"}</code> score</p>`
+      html`<div class="lab-summary">
+        <p><b>${displayedCount} results</b> (of ${candidateCount} candidates requested) — ordered by
+        <code>${authoritative ? "rerank" : "retrieval"}</code> score</p>
+        <p class="muted" style="margin-top: 6px; font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="usa-tag usa-tag--info">Mode: ${modeBadge}</span>
+          <span class="usa-tag">Total: ${totalLatency}</span>
+          <span class="usa-tag">HyDE: ${hydeLatency}</span>
+          <span class="usa-tag">Rerank: ${rerankLatency}</span>
+        </p>
+      </div>`
     );
 
     if (result.reranked && !authoritative) {
@@ -574,7 +595,7 @@
     }
 
     var hits = result.results.map(function (hit, index) {
-      return labHit(hit, index, authoritative);
+      return labHit(hit, index, authoritative, reranked);
     });
     parts.push(html`<div class="lab-hits">${hits}</div>`);
 

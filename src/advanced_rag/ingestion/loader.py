@@ -27,6 +27,7 @@ __all__ = [
     "chunk_corpus",
     "load_corpus",
     "load_document",
+    "load_path",
     "parse_front_matter",
 ]
 
@@ -35,6 +36,44 @@ def load_document(path: Path, *, root: Path | None = None) -> Document:
     """Extract and load a single document using the appropriate format extractor."""
     extractor = get_extractor(path)
     return extractor.extract(path, root=root)
+
+
+def load_path(
+    target_path: Path | str,
+    *,
+    root: Path | None = None,
+    ignore_errors: bool = True,
+) -> list[Document]:
+    """Load documents from a target path (supporting both individual files and directories).
+
+    Args:
+        target_path: Path to a single file or a directory.
+        root: Optional root directory for relative path derivation.
+        ignore_errors: If True, skips unreadable files in directory mode.
+
+    Returns:
+        List of loaded Document objects.
+    """
+    settings = get_settings()
+    p = settings.absolute(Path(target_path)) if not isinstance(target_path, Path) else target_path
+    if not p.is_absolute():
+        p = settings.absolute(p)
+
+    if not p.exists():
+        raise FileNotFoundError(f"target path does not exist: {p}")
+
+    if p.is_file():
+        if p.suffix.lower() not in EXTRACTOR_REGISTRY:
+            supported = ", ".join(sorted(EXTRACTOR_REGISTRY.keys()))
+            raise ValueError(
+                f"Unsupported file extension {p.suffix!r} for {p.name}. Supported: {supported}"
+            )
+        return [load_document(p, root=root or p.parent)]
+
+    if p.is_dir():
+        return load_corpus(p, ignore_errors=ignore_errors)
+
+    raise ValueError(f"Path is neither a regular file nor a directory: {p}")
 
 
 def load_corpus(
@@ -64,7 +103,11 @@ def load_corpus(
         [
             p
             for p in root.rglob("*")
-            if p.is_file() and p.suffix.lower() in EXTRACTOR_REGISTRY
+            if p.is_file()
+            and not any(part.startswith(".") for part in p.relative_to(root).parts)
+            and not p.name.endswith("_manifest.json")
+            and p.name != "manifest.json"
+            and p.suffix.lower() in EXTRACTOR_REGISTRY
         ],
         key=lambda p: p.relative_to(root).as_posix(),
     )

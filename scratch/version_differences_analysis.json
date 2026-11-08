@@ -1,0 +1,822 @@
+{
+  "total_docs": 64,
+  "unchanged_count": 10,
+  "unchanged": [
+    "control-plane-node-communication.md",
+    "controllers.md",
+    "init-containers.md",
+    "ephemeral-containers.md",
+    "service-traffic-policy.md",
+    "kube-scheduler.md",
+    "safely-drain-node.md",
+    "certificates.md",
+    "determine-pod-failure-reason.md",
+    "monitor-node-health.md"
+  ],
+  "modified_count": 54,
+  "modified": [
+    {
+      "name": "what-is-kubernetes.md",
+      "category": "fundamentals",
+      "additions": 7,
+      "deletions": 6,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -3,3 +3,3 @@\n",
+        " The name Kubernetes originates from Greek, meaning helmsman or pilot. K8s as an abbreviation",
+        "-results from counting the eight letters between the \"K\" and the \"s\". Google open-sourced the",
+        "+results from counting the eight letters between the \"K\" and the \"s\". Google open sourced the",
+        " Kubernetes project in 2014. Kubernetes combines",
+        "@@ -23,3 +23,3 @@\n"
+      ]
+    },
+    {
+      "name": "components.md",
+      "category": "fundamentals",
+      "additions": 6,
+      "deletions": 6,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -12,6 +12,6 @@\n",
+        " [kube-apiserver](/docs/concepts/architecture/#kube-apiserver)",
+        "-: The core component server that exposes the Kubernetes HTTP API",
+        "+: The core component server that exposes the Kubernetes HTTP API.",
+        " ",
+        " [etcd](/docs/concepts/architecture/#etcd)"
+      ]
+    },
+    {
+      "name": "kubernetes-api.md",
+      "category": "fundamentals",
+      "additions": 7,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -70,3 +70,3 @@\n",
+        " ",
+        "-The [discovery document](https://github.com/kubernetes/kubernetes/blob/release-v1.31/api/discovery/aggregated_v2beta1.json)",
+        "+The [discovery document](https://github.com/kubernetes/kubernetes/blob/release-v1.31/api/discovery/aggregated_v2.json)",
+        " for the built-in resources can be found in the Kubernetes GitHub repository.",
+        "@@ -174,2 +174,8 @@\n"
+      ]
+    },
+    {
+      "name": "namespaces.md",
+      "category": "fundamentals",
+      "additions": 3,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -113,7 +113,5 @@\n",
+        " ",
+        "-Most Kubernetes resources (e.g. pods, services, replication controllers, and others) are",
+        "-in some namespaces.  However namespace resources are not themselves in a namespace.",
+        "-And low-level resources, such as",
+        "-[nodes](/docs/concepts/architecture/nodes/) and"
+      ]
+    },
+    {
+      "name": "labels-and-selectors.md",
+      "category": "fundamentals",
+      "additions": 11,
+      "deletions": 2,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -295,4 +295,10 @@\n",
+        " For instance, different applications would use different values for the `app` label, but a",
+        "-multi-tier application, such as the [guestbook example](https://github.com/kubernetes/examples/tree/master/guestbook/),",
+        "-would additionally need to distinguish each tier. The frontend could carry the following labels:",
+        "+multi-tier application, such as the [guestbook example](https://github.com/kubernetes/examples/tree/master/web/guestbook/),",
+        "+would additionally need to distinguish each tier. "
+      ]
+    },
+    {
+      "name": "nodes.md",
+      "category": "architecture",
+      "additions": 8,
+      "deletions": 57,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -61,3 +61,3 @@\n",
+        " cannot have the same name at the same time. Kubernetes also assumes that a resource with the same",
+        "-name is the same object. In case of a Node, it is implicitly assumed that an instance using the",
+        "+name is the same object. In the case of a Node, it is implicitly assumed that an instance using the",
+        " same name will have the same state (e.g. network settings, root disk contents) and attributes like",
+        "@@ -108,3 +108,3 @@\n"
+      ]
+    },
+    {
+      "name": "leases.md",
+      "category": "architecture",
+      "additions": 9,
+      "deletions": 2,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -27,2 +27,9 @@\n",
+        " ",
+        "+### Kube controller manager lock release on exit",
+        "+",
+        "+When the `ControllerManagerReleaseLeaderElectionLockOnExit` feature gate is enabled,",
+        "+the `kube-controller-manager` actively releases its leader election lock during"
+      ]
+    },
+    {
+      "name": "garbage-collection.md",
+      "category": "architecture",
+      "additions": 1,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -138,3 +138,3 @@\n",
+        " ",
+        "-As a beta feature, you can specify the maximum time a local image can be unused for,",
+        "+You can specify the maximum time a local image can be unused for,",
+        " regardless of disk usage. This is a kubelet setting that you configure for each node."
+      ]
+    },
+    {
+      "name": "pods.md",
+      "category": "workloads",
+      "additions": 140,
+      "deletions": 68,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -109,2 +109,12 @@\n",
+        " * DaemonSet",
+        "+",
+        "+### Specifying a scheduling group",
+        "+",
+        "+By default, Kubernetes schedules every Pod individually. However, some tightly-coupled applications"
+      ]
+    },
+    {
+      "name": "pod-lifecycle.md",
+      "category": "workloads",
+      "additions": 331,
+      "deletions": 49,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -4,2 +4,6 @@\n",
+        " `Failed` phases depending on whether any container in the Pod terminated in failure.",
+        "+",
+        "+While a Pod runs, the kubelet manages containers and translates the Pod's spec",
+        "+for the container runtime. The kubelet also manages executing",
+        "+[probes](#container-probes) that track the health of your application."
+      ]
+    },
+    {
+      "name": "container-lifecycle-hooks.md",
+      "category": "workloads",
+      "additions": 25,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -17,4 +17,11 @@\n",
+        " This hook is executed immediately after a container is created.",
+        "-However, there is no guarantee that the hook will execute before the container ENTRYPOINT.",
+        "+It runs **concurrently** with the container's `ENTRYPOINT` (main process),",
+        "+meaning the hook may run before, during, or after the main process starts.",
+        "+"
+      ]
+    },
+    {
+      "name": "deployments.md",
+      "category": "workloads",
+      "additions": 25,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -265,2 +265,12 @@\n",
+        " ",
+        "+The cleanup only starts **after** a Deployment reaches a ",
+        "+[complete state](/docs/concepts/workloads/controllers/deployment/#complete-deployment).",
+        "+If you set `.spec.revisionHistoryLimit` to 0, any rollout nonetheless triggers creation of a new",
+        "+ReplicaSet before Kubernetes removes the old one."
+      ]
+    },
+    {
+      "name": "replicasets.md",
+      "category": "workloads",
+      "additions": 2,
+      "deletions": 25,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -289,26 +289,3 @@\n",
+        " ",
+        "-### Isolating Pods from a ReplicaSet",
+        "-",
+        "-You can remove Pods from a ReplicaSet by changing their labels. This technique may be used to remove Pods",
+        "-from service for debugging, data recovery, etc. Pods that are removed in this way will be replaced automatically ("
+      ]
+    },
+    {
+      "name": "statefulsets.md",
+      "category": "workloads",
+      "additions": 125,
+      "deletions": 111,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -5,3 +5,3 @@\n",
+        " StatefulSets are valuable for applications that require one or more of the",
+        "-following.",
+        "+following:",
+        " ",
+        "@@ -22,5 +22,5 @@\n"
+      ]
+    },
+    {
+      "name": "daemonsets.md",
+      "category": "workloads",
+      "additions": 6,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -167,3 +167,4 @@\n",
+        " - **Service**: Create a service with the same Pod selector, and use the service to reach a",
+        "-  daemon on a random node. (No way to reach specific node.)",
+        "+  daemon on a random node. Use [Service Internal Traffic Policy](/docs/concepts/services-networking/service-traffic-policy/)",
+        "+  to limit to pods on the same node.",
+        " "
+      ]
+    },
+    {
+      "name": "jobs.md",
+      "category": "workloads",
+      "additions": 210,
+      "deletions": 104,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -322,2 +322,169 @@\n",
+        " ",
+        "+When creating an Indexed Job, you can define when a Job can be declared as succeeded using a `.spec.successPolicy`,",
+        "+based on the pods that succeeded.",
+        "+",
+        "+By default, a Job succeeds when the number of succeeded Pods equals `.spec.completions`."
+      ]
+    },
+    {
+      "name": "cronjobs.md",
+      "category": "workloads",
+      "additions": 14,
+      "deletions": 10,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -41,3 +41,3 @@\n",
+        " # \u2502 \u2502 \u2502 \u2502 \u2502                                   OR sun, mon, tue, wed, thu, fri, sat",
+        "-# \u2502 \u2502 \u2502 \u2502 \u2502 ",
+        "+# \u2502 \u2502 \u2502 \u2502 \u2502",
+        " # \u2502 \u2502 \u2502 \u2502 \u2502",
+        "@@ -171,9 +171,6 @@\n"
+      ]
+    },
+    {
+      "name": "configure-probes.md",
+      "category": "workloads",
+      "additions": 36,
+      "deletions": 279,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,39 +1,6 @@\n",
+        "-This page shows how to configure liveness, readiness and startup probes for containers.",
+        "-",
+        "-For more information about probes, see [Liveness, Readiness and Startup Probes](/docs/concepts/configuration/liveness-readiness-startup-probes)",
+        "-",
+        "-The [kubelet](/docs/reference/command-line-tools-reference/kubelet/) uses"
+      ]
+    },
+    {
+      "name": "services.md",
+      "category": "networking",
+      "additions": 86,
+      "deletions": 148,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -79,16 +79,2 @@\n",
+        " ",
+        "-```yaml",
+        "-apiVersion: v1",
+        "-kind: Service",
+        "-metadata:"
+      ]
+    },
+    {
+      "name": "ingress.md",
+      "category": "networking",
+      "additions": 22,
+      "deletions": 29,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -3,3 +3,11 @@\n",
+        " > **Note:** ",
+        "-Ingress is frozen. New features are being added to the [Gateway API](/docs/concepts/services-networking/gateway/).",
+        "+The Kubernetes project recommends using [Gateway](https://gateway-api.sigs.k8s.io/) instead of",
+        "+[Ingress](/docs/concepts/services-networking/ingress/).",
+        "+The Ingress API has been frozen."
+      ]
+    },
+    {
+      "name": "ingress-controllers.md",
+      "category": "networking",
+      "additions": 16,
+      "deletions": 11,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,14 +1,20 @@\n",
+        "-In order for the Ingress resource to work, the cluster must have an ingress controller running. ",
+        "+> **Note:** ",
+        "+The Kubernetes project recommends using [Gateway](https://gateway-api.sigs.k8s.io/) instead of",
+        "+[Ingress](/docs/concepts/services-networking/ingress/).",
+        "+The Ingress API has been frozen."
+      ]
+    },
+    {
+      "name": "gateway-api.md",
+      "category": "networking",
+      "additions": 83,
+      "deletions": 8,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -28,3 +28,3 @@\n",
+        " ",
+        "-Gateway API has three stable API kinds:",
+        "+Gateway API has four stable API kinds:",
+        " ",
+        "@@ -37,2 +37,6 @@\n"
+      ]
+    },
+    {
+      "name": "endpoint-slices.md",
+      "category": "networking",
+      "additions": 98,
+      "deletions": 137,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,6 +1,2 @@\n",
+        " *(Feature state: stable in v1.21)*",
+        "-",
+        "-Kubernetes' _EndpointSlice_ API provides a way to track network endpoints",
+        "-within a Kubernetes cluster. EndpointSlices offer a more scalable and extensible",
+        "-alternative to [Endpoints](/docs/concepts/services-networking/service/#endpoints)."
+      ]
+    },
+    {
+      "name": "dns-pod-service.md",
+      "category": "networking",
+      "additions": 89,
+      "deletions": 56,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,7 +1,7 @@\n",
+        " Kubernetes creates DNS records for Services and Pods. You can contact",
+        "-Services with consistent DNS names instead of IP addresses. ",
+        "+Services with consistent DNS names instead of IP addresses.",
+        " ",
+        " Kubernetes publishes information about Pods and Services which is used"
+      ]
+    },
+    {
+      "name": "network-policies.md",
+      "category": "networking",
+      "additions": 6,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -77,3 +77,3 @@\n",
+        " ",
+        "-**spec**: NetworkPolicy [spec](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status)",
+        "+**spec**: NetworkPolicy [spec](https://github.com/kubernetes/community/blob/main/contributors/devel/sig-architecture/api-conventions.md#spec-and-status)",
+        " has all the information needed to define a particular network policy in the given namespace.",
+        "@@ -212,2 +212,7 @@\n"
+      ]
+    },
+    {
+      "name": "volumes.md",
+      "category": "storage",
+      "additions": 209,
+      "deletions": 596,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,14 +1,41 @@\n",
+        "-On-disk files in a container are ephemeral, which presents some problems for",
+        "-non-trivial applications when running in containers. One problem occurs when ",
+        "-a container crashes or is stopped. Container state is not saved so all of the ",
+        "-files that were created or modified during the lifetime of the container are lost. ",
+        "-During a crash, kubelet restarts the container with a clean state. "
+      ]
+    },
+    {
+      "name": "persistent-volumes.md",
+      "category": "storage",
+      "additions": 20,
+      "deletions": 210,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -32,3 +32,3 @@\n",
+        " ",
+        "-See the [detailed walkthrough with working examples](/docs/tasks/configure-pod-container/configure-persistent-volume-storage/).",
+        "+See the [detailed walkthrough with working examples](/docs/tutorials/configuration/configure-persistent-volume-storage).",
+        " ",
+        "@@ -230,6 +230,5 @@\n"
+      ]
+    },
+    {
+      "name": "storage-classes.md",
+      "category": "storage",
+      "additions": 1,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -91,3 +91,3 @@\n",
+        " alongside Kubernetes). You can also run and specify external provisioners,",
+        "-which are independent programs that follow a [specification](https://git.k8s.io/design-proposals-archive/storage/volume-provisioning.md)",
+        "+which are independent programs that follow a [specification](https://github.com/kubernetes/design-proposals-archive/blob/main/storage/volume-provisioning.md)",
+        " defined by Kubernetes. Authors of external provisioners have full discretion",
+        "@@ -330,6 +330,2 @@\n"
+      ]
+    },
+    {
+      "name": "volume-snapshots.md",
+      "category": "storage",
+      "additions": 32,
+      "deletions": 0,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -50,2 +50,11 @@\n",
+        " ",
+        "+For advanced use cases, such as creating group snapshots of multiple volumes, see the external",
+        "+[CSI Volume Group Snapshot documentation](https://kubernetes-csi.github.io/docs/group-snapshot-restore-feature.html).",
+        "+",
+        "+In clusters where a snapshot is only usable from part of the cluster (for example, a"
+      ]
+    },
+    {
+      "name": "dynamic-provisioning.md",
+      "category": "storage",
+      "additions": 3,
+      "deletions": 4,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -22,4 +22,3 @@\n",
+        " ",
+        "-More information on storage classes can be found",
+        "-[here](/docs/concepts/storage/storage-classes/).",
+        "+For more details, see the [Storage Classes](/docs/concepts/storage/storage-classes/) concept.",
+        " "
+      ]
+    },
+    {
+      "name": "configmaps.md",
+      "category": "configuration",
+      "additions": 1,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -232,3 +232,3 @@\n",
+        " ```shell",
+        "-kubectl logs pod/ env-configmap",
+        "+kubectl logs pod/env-configmap",
+        " ```"
+      ]
+    },
+    {
+      "name": "secrets.md",
+      "category": "configuration",
+      "additions": 10,
+      "deletions": 4,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -601,2 +601,11 @@\n",
+        " ",
+        "+Authorization configuration affects how Secret data can be accessed within a namespace. ",
+        "+For example, granting **list** or **watch** permissions on Secrets allows a subject",
+        "+to read all Secret data in that namespace, not only the Secrets explicitly ",
+        "+referenced by its Pods. Restrict access to the minimum set of permissions "
+      ]
+    },
+    {
+      "name": "configure-pod-configmap.md",
+      "category": "configuration",
+      "additions": 1,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -698,3 +698,3 @@\n",
+        " > **Caution:** ",
+        "-Like before, all previous files in the `/etc/config/` directory will be deleted.",
+        "+Like before, all previous files in the `/etc/config/` directory will be inaccessible.",
+        " "
+      ]
+    },
+    {
+      "name": "manage-resources-containers.md",
+      "category": "configuration",
+      "additions": 127,
+      "deletions": 282,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -39,7 +39,5 @@\n",
+        " > **Note:** ",
+        "-There is an alpha feature `MemoryQoS` which attempts to add more preemptive",
+        "-limit enforcement for memory (as opposed to reactive enforcement by the OOM",
+        "-killer). However, this effort is",
+        "-[stalled](https://github.com/kubernetes/enhancements/tree/a47155b340/keps/sig-node/2570-memory-qos#latest-update-stalled)"
+      ]
+    },
+    {
+      "name": "assign-pod-node.md",
+      "category": "scheduling",
+      "additions": 102,
+      "deletions": 24,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -68,3 +68,3 @@\n",
+        " `nodeSelector` is the simplest way to constrain Pods to nodes with specific",
+        "-labels. Affinity and anti-affinity expands the types of constraints you can",
+        "+labels. Affinity and anti-affinity expand the types of constraints you can",
+        " define. Some of the benefits of affinity and anti-affinity include:",
+        "@@ -176,3 +176,3 @@\n"
+      ]
+    },
+    {
+      "name": "taints-and-tolerations.md",
+      "category": "scheduling",
+      "additions": 20,
+      "deletions": 44,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -27,2 +27,3 @@\n",
+        " To remove the taint added by the command above, you can run:",
+        "+",
+        " ```shell",
+        "@@ -71,3 +72,4 @@\n",
+        " "
+      ]
+    },
+    {
+      "name": "node-pressure-eviction.md",
+      "category": "scheduling",
+      "additions": 59,
+      "deletions": 39,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,10 +1,2 @@\n",
+        " </br>",
+        "-",
+        "-> **Note:** ",
+        "-The _split image filesystem_ feature, which enables support for the `containerfs`",
+        "-filesystem, adds several new eviction signals, thresholds and metrics. To use"
+      ]
+    },
+    {
+      "name": "pod-priority-preemption.md",
+      "category": "scheduling",
+      "additions": 119,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -29,7 +29,2 @@\n",
+        " Keep reading for more information about these steps.",
+        "-",
+        "-> **Note:** ",
+        "-Kubernetes already ships with two PriorityClasses:",
+        "-`system-cluster-critical` and `system-node-critical`."
+      ]
+    },
+    {
+      "name": "limit-ranges.md",
+      "category": "scheduling",
+      "additions": 1,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -38,3 +38,3 @@\n",
+        " - If you attempt to create or update an object (Pod or PersistentVolumeClaim) that violates",
+        "-  a LimitRange constraint, your request to the API server will fail with anHTTP status",
+        "+  a LimitRange constraint, your request to the API server will fail with an HTTP status",
+        "   code `403 Forbidden` and a message explaining the constraint that has been violated."
+      ]
+    },
+    {
+      "name": "resource-quotas.md",
+      "category": "scheduling",
+      "additions": 424,
+      "deletions": 404,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -3,15 +3,24 @@\n",
+        " ",
+        "-Resource quotas are a tool for administrators to address this concern.",
+        "-",
+        "-A resource quota, defined by a `ResourceQuota` object, provides constraints that limit",
+        "-aggregate resource consumption per namespace. It can limit the quantity of objects that can"
+      ]
+    },
+    {
+      "name": "rbac.md",
+      "category": "security",
+      "additions": 36,
+      "deletions": 97,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -8,6 +8,18 @@\n",
+        " To enable RBAC, start the API server",
+        "-with the `--authorization-mode` flag set to a comma-separated list that includes `RBAC`;",
+        "+with the `--authorization-config` flag set to a file that includes the `RBAC` authorizer; for example:",
+        "+",
+        "+```yaml"
+      ]
+    },
+    {
+      "name": "pod-security-standards.md",
+      "category": "security",
+      "additions": 36,
+      "deletions": 2,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -155,2 +155,36 @@\n",
+        " \t\t<tr>",
+        "+\t\t\t<td>Host Probes / Lifecycle Hooks (v1.34+)</td>",
+        "+\t\t\t<td>",
+        "+\t\t\t\t<p>The Host field in probes and lifecycle hooks must be disallowed.</p>",
+        "+\t\t\t\t<p><strong>Restricted Fields</strong></p>"
+      ]
+    },
+    {
+      "name": "pod-security-admission.md",
+      "category": "security",
+      "additions": 1,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -51,3 +51,3 @@\n",
+        " # Optional: per-mode version label that can be used to pin the policy to the",
+        "-# version that shipped with a given Kubernetes minor version (for example v{{< skew currentVersion >}}).",
+        "+# version that shipped with a given Kubernetes minor version (for example v1.37).",
+        " #"
+      ]
+    },
+    {
+      "name": "service-accounts.md",
+      "category": "security",
+      "additions": 5,
+      "deletions": 10,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -169,13 +169,8 @@\n",
+        " ",
+        "+#### Node audience restriction for service account tokens {#node-audience-restriction}",
+        "+",
+        "+*(Feature state: deprecated in v1.32)*",
+        "+"
+      ]
+    },
+    {
+      "name": "pod-security-context.md",
+      "category": "security",
+      "additions": 69,
+      "deletions": 26,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -177,3 +177,3 @@\n",
+        " ```shell",
+        "-$ id",
+        "+id",
+        " ```",
+        "@@ -193,3 +193,3 @@\n"
+      ]
+    },
+    {
+      "name": "reserve-compute-resources.md",
+      "category": "cluster-administration",
+      "additions": 11,
+      "deletions": 4,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -169,3 +169,5 @@\n",
+        " `systemReserved` by specifying `kube-reserved` & `system-reserved` values in",
+        "-the same setting. Note that to enforce `kubeReserved` or `systemReserved`,",
+        "+the same setting. Additionally, only compressible resources may be enforced by",
+        "+specifying `kube-reserved-compressible` and `system-reserved-compressible`.",
+        "+Note that to enforce `kubeReserved` or `systemReserved`,"
+      ]
+    },
+    {
+      "name": "node-shutdown.md",
+      "category": "cluster-administration",
+      "additions": 92,
+      "deletions": 49,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -1,3 +1,3 @@\n",
+        " In a Kubernetes cluster, a node",
+        "-can be shutdown in a planned graceful way or unexpectedly because of reasons such",
+        "+can be shut down in a planned graceful way or unexpectedly because of reasons such",
+        " as a power outage or something else external. A node shutdown could lead to workload",
+        "@@ -5,2 +5,16 @@\n"
+      ]
+    },
+    {
+      "name": "debug-application-pods.md",
+      "category": "troubleshooting",
+      "additions": 5,
+      "deletions": 5,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -135,13 +135,13 @@\n",
+        " First, verify that there are endpoints for the service. For every Service object,",
+        "-the apiserver makes an `endpoints` resource available.",
+        "+the apiserver makes one or more `EndpointSlice` resources available.",
+        " ",
+        "-You can view this resource with:"
+      ]
+    },
+    {
+      "name": "debug-services.md",
+      "category": "troubleshooting",
+      "additions": 15,
+      "deletions": 22,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -12,3 +12,3 @@\n",
+        " ```none",
+        "-kubectl run -it --rm --restart=Never busybox --image=gcr.io/google-containers/busybox sh",
+        "+kubectl run -it --rm --restart=Never busybox --image=registry.k8s.io/busybox:1.27.2 sh",
+        " ```",
+        "@@ -405,3 +405,3 @@\n"
+      ]
+    },
+    {
+      "name": "debug-running-pods.md",
+      "category": "troubleshooting",
+      "additions": 6,
+      "deletions": 6,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -107,3 +107,3 @@\n",
+        " ",
+        "-The container state is one of Waiting, Running, or Terminated. Depending on the state, additional information will be provided -- here you can see that for a container in Running state, the system tells you when the container started.",
+        "+The container state is one of Waiting, Running, or Terminated. Depending on the state, additional information will be provided - here you can see that for a container in Running state, the system tells you when the container started.",
+        " ",
+        "@@ -111,3 +111,3 @@\n"
+      ]
+    },
+    {
+      "name": "crictl-troubleshooting.md",
+      "category": "troubleshooting",
+      "additions": 0,
+      "deletions": 1,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -226,2 +226 @@\n",
+        " * [Learn more about `crictl`](https://github.com/kubernetes-sigs/cri-tools).",
+        "-* [Map `docker` CLI commands to `crictl`](/docs/reference/tools/map-crictl-dockercli/)."
+      ]
+    },
+    {
+      "name": "resource-usage-monitoring.md",
+      "category": "monitoring",
+      "additions": 1,
+      "deletions": 2,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -37,3 +37,3 @@\n",
+        " resource usage statistics through the metrics-server Resource Metrics API.",
+        "-This API is served at `/metrics/resource/v1beta1` on the kubelet's authenticated and ",
+        "+This API is served at `/metrics/resource` on the kubelet's authenticated and ",
+        " read-only ports. ",
+        "@@ -81,3 +81,2 @@\n"
+      ]
+    },
+    {
+      "name": "resource-metrics-pipeline.md",
+      "category": "monitoring",
+      "additions": 12,
+      "deletions": 12,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -6,4 +6,4 @@\n",
+        " ",
+        "-The [HorizontalPodAutoscaler](/docs/tasks/run-application/horizontal-pod-autoscale/)  (HPA) and",
+        "-[VerticalPodAutoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#readme) (VPA)",
+        "+The [HorizontalPodAutoscaler](/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/)  (HPA) and",
+        "+[VerticalPodAutoscaler](/docs/concepts/workloads/autoscaling/vertical-pod-autoscale/) (VPA)"
+      ]
+    },
+    {
+      "name": "system-metrics.md",
+      "category": "monitoring",
+      "additions": 117,
+      "deletions": 22,
+      "key_heading_changes": [],
+      "sample_diff": [
+        "@@ -45,5 +45,7 @@\n",
+        " ",
+        "-Alpha metric \u2192  Stable metric \u2192  Deprecated metric \u2192  Hidden metric \u2192 Deleted metric",
+        "+Alpha metric \u2192 Beta metric \u2192 Stable metric \u2192  Deprecated metric \u2192  Hidden metric \u2192 Deleted metric",
+        " ",
+        " Alpha metrics have no stability guarantees. These metrics can be modified or deleted at any time."
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,5 @@
+alert_id,service,severity,status,description
+ALR-001,ingress-nginx,critical,firing,Certificate expired on edge gateway
+ALR-002,etcd-cluster,warning,resolved,Leader election latency above 100ms
+ALR-003,kubelet-daemon,critical,firing,Disk pressure detected on worker node pool
+

@@ -221,9 +221,13 @@ def retrieve_node(state: RagState) -> dict:                             # Fetch 
                 f"top={result.top_score:.3f}"
             )
 
+    top_n = settings.rerank_top_n or 5
+    context_chunks = chunks[:top_n] if len(chunks) > top_n else chunks
+
     return {                                                            # Output: chunks, context, hyde_document
         "chunks": chunks,
-        "context": format_context(chunks),
+        "context_chunks": context_chunks,
+        "context": format_context(context_chunks),
         "hyde_document": hyde_doc,
         "retrieval_attempts": attempts,
         "trace": trace,
@@ -573,10 +577,18 @@ def citations_from(state: RagState) -> list[Citation]:                # Create s
 
     Prefers ones already in state - a cache hit restores them there without ever
     having retrieved chunks to derive them from.
+    When context_chunks was supplied to the LLM (non-extractive mode), return
+    citations for exactly those chunks so citations [1..N] align 1-to-1 with
+    the LLM context without index mismatch from excluded chunks.
     """
     restored = state.get("citations")
     if restored:
         return list(restored)
+    chunks = (
+        state.get("context_chunks")
+        if (state.get("context_chunks") and not state.get("extractive"))
+        else (state.get("chunks") or [])
+    )
     return [
         Citation(
             source=hit.chunk.source,
@@ -584,7 +596,7 @@ def citations_from(state: RagState) -> list[Citation]:                # Create s
             section=hit.chunk.section,
             score=round(hit.score, 4),
         )
-        for hit in state.get("chunks") or []
+        for hit in chunks
     ]
 
 

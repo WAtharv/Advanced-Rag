@@ -175,6 +175,17 @@ class GroqClient(LLMClient):
                             raise exc from fb_exc
                     raise
 
+                # Respect provider retry-after header if present
+                retry_header = None
+                resp = getattr(exc, "response", None)
+                if resp is not None and hasattr(resp, "headers"):
+                    retry_header = resp.headers.get("retry-after")
+                if retry_header:
+                    try:
+                        delay = min(float(retry_header), 10.0)
+                    except (ValueError, TypeError):
+                        pass
+
                 logger.warning(
                     "Groq API %s (attempt %d/%d), retrying in %.1fs: %s",
                     getattr(exc, "status_code", "error"),

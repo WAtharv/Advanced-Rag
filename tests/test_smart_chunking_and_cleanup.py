@@ -287,8 +287,8 @@ def test_failed_ingestion_safety_preserves_existing_chunks(memory_store: HybridS
 
 
 def test_markdown_baseline_regression_preserved():
-    """Verify that the existing 9 markdown files in data/corpus produce exactly 82 chunks."""
-    corpus_docs = load_corpus(Path("data/corpus"))
+    """Verify that the 9 legacy markdown files in data/legacy_corpus_backup produce exactly 82 chunks."""
+    corpus_docs = load_corpus(Path("data/legacy_corpus_backup"))
     assert len(corpus_docs) == 9
     chunks = chunk_corpus(corpus_docs)
     assert len(chunks) == 82

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Kubernetes Cluster Autoscaler Guide</title>
+  <link rel="canonical" href="https://k8s-docs.corp/autoscaler-guide">
+  <style>
+    .hidden { display: none; }
+  </style>
+  <script>
+    console.log("analytics tracking code");
+  </script>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/docs">Docs</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Cluster Autoscaling Strategies</h1>
+    <p>The cluster autoscaler automatically adjusts the size of the Kubernetes cluster when pods fail to schedule.</p>
+    <h2>Scale Down Policies</h2>
+    <p>Nodes are considered unneeded when utilization drops below 50 percent for more than 10 minutes.</p>
+    <table>
+      <thead>
+        <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>scale-down-unneeded-time</td><td>10m</td><td>Time node must be unneeded before scale down</td></tr>
+        <tr><td>max-nodes-total</td><td>100</td><td>Maximum aggregate worker nodes</td></tr>
+      </tbody>
+    </table>
+    <pre><code>kubectl logs -n kube-system deployment/cluster-autoscaler</code></pre>
+  </main>
+  <footer>
+    <p>Internal documentation - Copyright 2026</p>
+  </footer>
+</body>
+</html>
+

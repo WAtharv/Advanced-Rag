@@ -1,0 +1,90 @@
+---
+title: "Helm Package Command Reference"
+category: "advanced"
+component: "packaging"
+helm_version: "4.3.1"
+source_repository: "https://github.com/helm/helm-www"
+source_ref: "main"
+source_commit: "60d4db89421147aec9fc3fcef9e2d49e2729f50b"
+source_url: "https://helm.sh/docs/helm/helm_package/"
+source_version: "4.3.1"
+retrieved_at: "2026-11-08T04:55:44.197718+00:00"
+spdx_license: "CC-BY-4.0"
+attribution: "Copyright The Helm Authors"
+content_hash: "dcc215c2624246dbd29b753a34b22c3469f38b79f466cf3bde6aff56fd57fba4"
+document_type: "reference"
+doc_type: "reference"
+---
+
+package a chart directory into a chart archive
+
+### Synopsis
+
+This command packages a chart into a versioned chart archive file. If a path
+is given, this will look at that path for a chart (which must contain a
+Chart.yaml file) and then package that directory.
+
+Versioned chart archives are used by Helm package repositories.
+
+To sign a chart, use the '--sign' flag. In most cases, you should also
+provide '--keyring path/to/secret/keys' and '--key keyname'.
+
+  $ helm package --sign ./mychart --key mykey --keyring ~/.gnupg/secring.gpg
+
+If '--keyring' is not specified, Helm usually defaults to the public keyring
+unless your environment is otherwise configured.
+
+```
+helm package [CHART_PATH] [...] [flags]
+```
+
+### Options
+
+```
+      --app-version string         set the appVersion on the chart to this version
+      --ca-file string             verify certificates of HTTPS-enabled servers using this CA bundle
+      --cert-file string           identify HTTPS client using this SSL certificate file
+  -u, --dependency-update          update dependencies from "Chart.yaml" to dir "charts/" before packaging
+  -d, --destination string         location to write the chart. (default ".")
+  -h, --help                       help for package
+      --insecure-skip-tls-verify   skip tls certificate checks for the chart download
+      --key string                 name of the key to use when signing. Used if --sign is true
+      --key-file string            identify HTTPS client using this SSL key file
+      --keyring string             location of a public keyring (default "~/.gnupg/pubring.gpg")
+      --passphrase-file string     location of a file which contains the passphrase for the signing key. Use "-" in order to read from stdin.
+      --password string            chart repository password where to locate the requested chart
+      --plain-http                 use insecure HTTP connections for the chart download
+      --sign                       use a PGP private key to sign this package
+      --username string            chart repository username where to locate the requested chart
+      --version string             set the version on the chart to this semver version
+```
+
+### Options inherited from parent commands
+
+```
+      --burst-limit int                 client-side default throttling limit (default 100)
+      --color string                    use colored output (never, auto, always) (default "auto")
+      --colour string                   use colored output (never, auto, always) (default "auto")
+      --content-cache string            path to the directory containing cached content (e.g. charts) (default "~/.cache/helm/content")
+      --debug                           enable verbose output
+      --kube-apiserver string           the address and the port for the Kubernetes API server
+      --kube-as-group stringArray       group to impersonate for the operation, this flag can be repeated to specify multiple groups.
+      --kube-as-user string             username to impersonate for the operation
+      --kube-ca-file string             the certificate authority file for the Kubernetes API server connection
+      --kube-context string             name of the kubeconfig context to use
+      --kube-insecure-skip-tls-verify   if true, the Kubernetes API server's certificate will not be checked for validity. This will make your HTTPS connections insecure
+      --kube-tls-server-name string     server name to use for Kubernetes API server certificate validation. If it is not provided, the hostname used to contact the server is used
+      --kube-token string               bearer token used for authentication
+      --kubeconfig string               path to the kubeconfig file
+  -n, --namespace string                namespace scope for this request
+      --qps float32                     queries per second used when communicating with the Kubernetes API, not including bursting
+      --registry-config string          path to the registry config file (default "~/.config/helm/registry/config.json")
+      --repository-cache string         path to the directory containing cached repository indexes (default "~/.cache/helm/repository")
+      --repository-config string        path to the file containing repository names and URLs (default "~/.config/helm/repositories.yaml")
+```
+
+### SEE ALSO
+
+* [helm](/helm/helm.md)	 - The Helm package manager for Kubernetes.
+
+###### Auto generated by spf13/cobra on 15-Oct-2026

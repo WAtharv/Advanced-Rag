@@ -1,0 +1,371 @@
+---
+title: "Charts Tips and Tricks for Troubleshooting"
+category: "troubleshooting"
+component: "troubleshooting"
+helm_version: "4.3.1"
+source_repository: "https://github.com/helm/helm-www"
+source_ref: "main"
+source_commit: "60d4db89421147aec9fc3fcef9e2d49e2729f50b"
+source_url: "https://helm.sh/docs/howto/charts_tips_and_tricks/"
+source_version: "4.3.1"
+retrieved_at: "2026-11-08T04:55:44.197718+00:00"
+spdx_license: "CC-BY-4.0"
+attribution: "Copyright The Helm Authors"
+content_hash: "801ac2362313dae1368e0e7cac72dd887cc82fb7055e8bb2b7e049942591a93b"
+document_type: "troubleshooting"
+doc_type: "troubleshooting"
+---
+
+This guide covers some of the tips and tricks Helm chart developers have learned
+while building production-quality charts.
+
+## Know Your Template Functions
+
+Helm uses [Go templates](https://godoc.org/text/template) for templating your
+resource files. While Go ships several built-in functions, we have added many
+others.
+
+First, we added all of the functions in the [Sprig
+library](https://masterminds.github.io/sprig/), except `env` and `expandenv`, for security reasons.
+
+We also added two special template functions: `include` and `required`. The
+`include` function allows you to bring in another template, and then pass the
+results to other template functions. The `required` function allows you to declare
+a particular values entry as required for template rendering. If the value is empty,
+the template rendering will fail with a user submitted error message.
+
+### Using the 'include' Function
+
+Go provides a way of including one template in another using a built-in
+`template` directive. However, the built-in function cannot be used in Go
+template pipelines.
+
+To make it possible to include a template, and then perform an operation on that
+template's output, Helm has a special `include` function:
+
+```
+{{- include "toYaml" $value | nindent 2 }}
+```
+
+The above includes a template called `toYaml`, passes it `$value`, and then
+passes the output of that template to the `nindent` function. Using the
+`{{- ... | nindent _n_ }}` pattern makes it easier to read the `include` in
+context, because it chomps the whitespace to the left (including the previous
+newline), then the `nindent` re-adds the newline and indents the included
+content by the requested amount.
+
+Because YAML ascribes significance to indentation levels and whitespace, this is
+one great way to include snippets of code, but handle indentation in a relevant
+context.
+
+This template snippet includes a template called `mytpl`, then
+lowercases the result, then wraps that in double quotes.
+
+```yaml
+value: {{ include "mytpl" . | lower | quote }}
+```
+
+### Using the 'required' function
+
+Go provides a `missingkey` template option to control behavior when a map is indexed
+with a key that's not present in the map. There may be situations where a chart
+developer wants to enforce this behavior for select values in the `values.yaml` file.
+
+The `required` function gives developers the ability to declare a value entry as
+required for template rendering. If the entry is empty in `values.yaml`, the
+template will not render and will return an error message supplied by the
+developer.
+
+For example:
+
+```
+{{ required "A valid foo is required!" .Values.foo }}
+```
+
+The above will render the template when `.Values.foo` is defined, but will fail
+to render and exit when `.Values.foo` is undefined.
+
+The following example of the `required` function declares an entry for
+`.Values.who` is required, and will print an error message when that entry is
+missing:
+
+```yaml
+value: {{ required "A valid .Values.who entry required!" .Values.who }}
+```
+
+## Quote Strings, Don't Quote Integers
+
+When you are working with string data, you are always safer quoting the strings
+than leaving them as bare words:
+
+```yaml
+name: {{ .Values.MyName | quote }}
+```
+
+But when working with integers _do not quote the values._ That can, in many
+cases, cause parsing errors inside of Kubernetes.
+
+```yaml
+port: {{ .Values.Port }}
+```
+
+This remark does not apply to env variables values which are expected to be
+string, even if they represent integers:
+
+```yaml
+env:
+  - name: HOST
+    value: "http://host"
+  - name: PORT
+    value: "1234"
+```
+
+## Using the 'tpl' Function
+
+The `tpl` function allows developers to evaluate strings as templates inside a
+template. This is useful to pass a template string as a value to a chart or
+render external configuration files. Syntax: `{{ tpl TEMPLATE_STRING VALUES }}`
+
+Examples:
+
+```yaml
+# values
+template: "{{ .Values.name }}"
+name: "Tom"
+
+# template
+{{ tpl .Values.template . }}
+
+# output
+Tom
+```
+
+Rendering an external configuration file:
+
+```yaml
+# external configuration file conf/app.conf
+firstName={{ .Values.firstName }}
+lastName={{ .Values.lastName }}
+
+# values
+firstName: Peter
+lastName: Parker
+
+# template
+{{ tpl (.Files.Get "conf/app.conf") . }}
+
+# output
+firstName=Peter
+lastName=Parker
+```
+
+## Creating Image Pull Secrets
+Image pull secrets are essentially a combination of _registry_, _username_, and
+_password_.  You may need them in an application you are deploying, but to
+create them requires running `base64` a couple of times.  We can write a helper
+template to compose the Docker configuration file for use as the Secret's
+payload.  Here is an example:
+
+First, assume that the credentials are defined in the `values.yaml` file like
+so:
+```yaml
+imageCredentials:
+  registry: quay.io
+  username: someone
+  password: sillyness
+  email: someone@host.com
+```
+
+We then define our helper template as follows:
+```
+{{- define "imagePullSecret" }}
+{{- with .Values.imageCredentials }}
+{{- printf "{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":%s,\"email\":\"%s\",\"auth\":\"%s\"}}}" .registry .username (.password | quote) .email (printf "%s:%s" .username .password | b64enc) | b64enc }}
+{{- end }}
+{{- end }}
+```
+
+Finally, we use the helper template in a larger template to create the Secret
+manifest:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myregistrykey
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: {{ template "imagePullSecret" . }}
+```
+
+## Automatically Roll Deployments
+
+Often times ConfigMaps or Secrets are injected as configuration files in
+containers or there are other external dependency changes that require rolling
+pods. Depending on the application a restart may be required should those be
+updated with a subsequent `helm upgrade`, but if the deployment spec itself
+didn't change the application keeps running with the old configuration resulting
+in an inconsistent deployment.
+
+The `sha256sum` function can be used to ensure a deployment's annotation section
+is updated if another file changes:
+
+```yaml
+kind: Deployment
+spec:
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+[...]
+```
+
+NOTE: If you're adding this to a library chart you won't be able to access your
+file in `$.Template.BasePath`. Instead you can reference your definition with
+`{{ include ("mylibchart.configmap") . | sha256sum }}`.
+
+In the event you always want to roll your deployment, you can use a similar
+annotation step as above, instead replacing with a random string so it always
+changes and causes the deployment to roll:
+
+```yaml
+kind: Deployment
+spec:
+  template:
+    metadata:
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+[...]
+```
+
+Each invocation of the template function will generate a unique random string.
+This means that if it's necessary to sync the random strings used by multiple
+resources, all relevant resources will need to be in the same template file.
+
+Both of these methods allow your Deployment to leverage the built in update
+strategy logic to avoid taking downtime.
+
+NOTE: In the past we recommended using the `--recreate-pods` flag as another
+option. This flag has been marked as deprecated in Helm 3 in favor of the more
+declarative method above.
+
+## Tell Helm Not To Uninstall a Resource
+
+Sometimes there are resources that should not be uninstalled when Helm runs a
+`helm uninstall`. Chart developers can add an annotation to a resource to
+prevent it from being uninstalled.
+
+```yaml
+kind: Secret
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+[...]
+```
+
+The annotation `helm.sh/resource-policy: keep` instructs Helm to skip deleting
+this resource when a helm operation (such as `helm uninstall`, `helm upgrade` or
+`helm rollback`) would result in its deletion. _However_, this resource becomes
+orphaned. Helm will no longer manage it in any way. This can lead to problems if
+using `helm install --replace` on a release that has already been uninstalled,
+but has kept resources.
+
+## Using "Partials" and Template Includes
+
+Sometimes you want to create some reusable parts in your chart, whether they're
+blocks or template partials. And often, it's cleaner to keep these in their own
+files.
+
+In the `templates/` directory, any file that begins with an underscore(`_`) is
+not expected to output a Kubernetes manifest file. So by convention, helper
+templates and partials are placed in a `_helpers.tpl` file.
+
+## Complex Charts with Many Dependencies
+
+Many of the charts in the CNCF [Artifact
+Hub](https://artifacthub.io/packages/search?kind=0) are "building blocks" for
+creating more advanced applications. But charts may be used to create instances
+of large-scale applications. In such cases, a single umbrella chart may have
+multiple subcharts, each of which functions as a piece of the whole.
+
+The current best practice for composing a complex application from discrete
+parts is to create a top-level umbrella chart that exposes the global
+configurations, and then use the `charts/` subdirectory to embed each of the
+components.
+
+## YAML is a Superset of JSON
+
+According to the YAML specification, YAML is a superset of JSON. That means that
+any valid JSON structure ought to be valid in YAML.
+
+This has an advantage: Sometimes template developers may find it easier to
+express a datastructure with a JSON-like syntax rather than deal with YAML's
+whitespace sensitivity.
+
+As a best practice, templates should follow a YAML-like syntax _unless_ the JSON
+syntax substantially reduces the risk of a formatting issue.
+
+## Be Careful with Generating Random Values
+
+There are functions in Helm that allow you to generate random data,
+cryptographic keys, and so on. These are fine to use. But be aware that during
+upgrades, templates are re-executed. When a template run generates data that
+differs from the last run, that will trigger an update of that resource.
+
+## Install or Upgrade a Release with One Command
+
+Helm provides a way to perform an install-or-upgrade as a single command. Use
+`helm upgrade` with the `--install` command. This will cause Helm to see if the
+release is already installed. If not, it will run an install. If it is, then the
+existing release will be upgraded.
+
+```console
+$ helm upgrade --install <release name> --values <values file> <chart directory>
+```
+
+## Build Reproducible Chart Archives
+
+By default, the files inside a packaged chart archive (`.tgz`)
+carry the modification times of the source files on disk.
+As a result, repackaging the same chart produces archives that differ from one build to the next.
+To make chart archives reproducible,
+Helm honors the `SOURCE_DATE_EPOCH` environment variable defined by the
+[Reproducible Builds](https://reproducible-builds.org/docs/source-date-epoch/) project.
+When you set it,
+Helm stamps every file in the archive with the modification time you provide
+instead of the build time.
+
+Set `SOURCE_DATE_EPOCH` to a Unix timestamp,
+the number of whole seconds since 1970-01-01 in UTC,
+and run `helm package`:
+
+```console
+$ SOURCE_DATE_EPOCH=1609459200 helm package ./mychart
+```
+
+Helm stamps every file in the resulting archive with 2021-01-01T00:00:00Z,
+so packaging the same source again produces the same timestamps.
+To track your source history,
+derive the timestamp from your last commit:
+
+```console
+$ SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct) helm package ./mychart
+```
+
+Keep the following in mind when you use `SOURCE_DATE_EPOCH`:
+
+- The value must be a non-negative integer.
+  Helm interprets it as whole seconds in UTC and does not support sub-second precision.
+  A non-numeric or negative value fails the command with an `invalid SOURCE_DATE_EPOCH` error.
+- When the variable is unset or empty,
+  Helm keeps the default behavior,
+  where archive entries reflect the actual file modification times.
+- When you package a chart that contains a `Chart.lock` file,
+  Helm also stamps that file's `generated:` timestamp with the `SOURCE_DATE_EPOCH` value,
+  normalized to UTC and whole seconds.
+  As a result, charts that declare dependencies produce byte-identical archives across builds and machines
+  when you use the same `SOURCE_DATE_EPOCH`,
+  because the `Chart.lock` content matches, not just the file modification times.
+- `helm install`, `helm upgrade`, `helm dependency build`, and `helm dependency update`
+  also honor `SOURCE_DATE_EPOCH`,
+  but only when they re-archive a dependency sourced from a local `file://` repository.
+  Helm stores remotely downloaded dependencies as it fetched them.

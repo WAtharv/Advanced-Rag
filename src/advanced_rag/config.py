@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     qdrant_url: str | None = None
     qdrant_api_key: str | None = None
     qdrant_path: Path = Path("data/qdrant")
-    qdrant_collection: str = "k8s_ops_bge_small"
+    qdrant_collection: str = "sre_copilot_v1"
     #: Require explicit enablement before falling back to the baseline k8s_ops collection.
     allow_collection_fallback: bool = False
 
@@ -140,6 +140,8 @@ class Settings(BaseSettings):
     retrieve_top_k: int = 20
     rerank_top_n: int = 5
     hybrid_dense_weight: float = Field(0.7, ge=0.0, le=1.0)
+    hybrid_fusion: Literal["weighted", "rrf"] = "rrf"
+    enable_rerank: bool = False
     #: CRAG: below this reranker score the context is considered insufficient.
     crag_relevance_floor: float = 0.25
     #: Self-RAG: max answer regeneration attempts.
@@ -151,6 +153,12 @@ class Settings(BaseSettings):
     enable_self_rag: bool = True
     enable_text2sql: bool = True
     enable_guardrails: bool = True
+    #: Granular switch: enable LLM-based intent & scope verification for inbound questions.
+    #: If false, deterministic input layers (shape, PII redaction, secret request, injection) remain active.
+    enable_guardrails_llm_input: bool = True
+    #: Granular switch: enable LLM-based safety review for outbound answers.
+    #: If false, deterministic output layers (destructive command notice, secret egress redaction) remain active.
+    enable_guardrails_llm_output: bool = True
     enable_cache: bool = True
 
     # ---------- API ----------

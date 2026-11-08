@@ -22,6 +22,7 @@ class Chunk(BaseModel):
     section: str = ""
     doc_type: str = "runbook"
     file_type: str = ""
+    extraction_format: str = ""
     page_number: int | None = None
     row_number: int | None = None
     document_id: str = ""
@@ -33,6 +34,11 @@ class Chunk(BaseModel):
         doc_id = self.document_id or hashlib.sha256(self.source.encode()).hexdigest()[:16]
         c_hash = self.content_hash or hashlib.sha256(self.text.encode()).hexdigest()
         f_type = self.file_type or Path(self.source).suffix.lstrip(".").lower() or "text"
+        ext_fmt = (
+            self.extraction_format
+            or self.metadata.get("extraction_format")
+            or f_type
+        )
         page = (
             self.page_number
             if self.page_number is not None
@@ -51,6 +57,7 @@ class Chunk(BaseModel):
             "section": self.section,
             "doc_type": self.doc_type,                  # runbook, manual, etc.
             "file_type": f_type,
+            "extraction_format": ext_fmt,
             "document_id": doc_id,
             "content_hash": c_hash,
             "page_number": page,
@@ -79,6 +86,7 @@ class RetrievedChunk(BaseModel):                        # A chunk returned by re
     rerank_is_authoritative: bool = False               # whether reranker should be trusted
     dense_rank: int | None = None                       # vector search rank 
     sparse_rank: int | None = None                      # sparse rank 
+    retrieval_rank: int | None = None                   # initial retrieval rank before reranking 
 
     @property
     def score(self) -> float:
@@ -162,6 +170,11 @@ class TraceStep(BaseModel):                 # Stores LangGraph execution steps.
     node: str
     detail: str = ""
     elapsed_ms: int = 0
+
+    @property
+    def duration_ms(self) -> int:
+        """Alias for elapsed_ms to support standard timing diagnostics."""
+        return self.elapsed_ms
 
 
 class AnswerResponse(BaseModel):            # Final API response sent back to frontend.

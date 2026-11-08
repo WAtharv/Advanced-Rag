@@ -1,0 +1,2161 @@
+{
+  "health": {
+    "status": "ok",
+    "indexed_chunks": 5533,
+    "llm_mode": "live",
+    "model": "qwen/qwen3.8-27b",
+    "vector_store": "embedded:data\\qdrant",
+    "sql_dialect": "SQLite",
+    "cache": "in-process",
+    "features": {
+      "hyde": false,
+      "crag": true,
+      "self_rag": false,
+      "text2sql": true,
+      "guardrails": true,
+      "cache": true
+    }
+  },
+  "baseline": {
+    "time": 0.7533780999947339,
+    "status": 200,
+    "ordered_by": "rerank",
+    "rerank_is_authoritative": true,
+    "results_count": 5,
+    "top5": [
+      {
+        "rank": 1,
+        "source": "sre/runbooks/kubernetes/oomkilled.md",
+        "section": "3. Symptoms",
+        "retrieval_score": 0.8319,
+        "rerank_score": 0.9987,
+        "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+      },
+      {
+        "rank": 2,
+        "source": "sre/runbooks/kubernetes/oomkilled.md",
+        "section": "7. Read-Only Investigation Commands",
+        "retrieval_score": 0.2025,
+        "rerank_score": 0.9967,
+        "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+      },
+      {
+        "rank": 3,
+        "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+        "section": "3. Symptoms",
+        "retrieval_score": 0.4538,
+        "rerank_score": 0.9954,
+        "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+      },
+      {
+        "rank": 4,
+        "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+        "section": "8. Expected Outputs",
+        "retrieval_score": 0.9536,
+        "rerank_score": 0.9883,
+        "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+      },
+      {
+        "rank": 5,
+        "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+        "section": "9. Decision Tree",
+        "retrieval_score": 0.9217,
+        "rerank_score": 0.976,
+        "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+      }
+    ]
+  },
+  "exp_a": {
+    "A1_Dense": {
+      "mode": "dense",
+      "fusion": "rrf",
+      "latency": 0.021707799984142184,
+      "total_results": 20,
+      "ordered_by": "retrieval",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.7454,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.7412,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 3,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.7345,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 4,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.7309,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 5,
+          "source": "kubernetes/troubleshooting/debug-application-pods.md",
+          "section": "My pod stays terminating",
+          "retrieval_score": 0.7212,
+          "rerank_score": null,
+          "text_preview": "My pod stays terminating If a Pod is stuck in the `Terminating` state, it means "
+        }
+      ],
+      "all_sources": [
+        "sre/runbooks/kubernetes/crashloopbackoff.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "kubernetes/troubleshooting/debug-application-pods.md::My pod stays terminating",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/storage/volume-mount-failures.md::1. Incident Identifier",
+        "sre/runbooks/prometheus/high-cardinality-problems.md::3. Symptoms",
+        "sre/runbooks/networking/coredns-failures.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/pending-pods.md::9. Decision Tree",
+        "sre/runbooks/networking/endpointslice-problems.md::8. Expected Outputs",
+        "sre/runbooks/networking/ingress-5xx-errors.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::6. Diagnostic Procedure",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::4. Common Causes",
+        "kubernetes/workloads/pod-lifecycle.md::Pod phase",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::1. Incident Identifier",
+        "sre/runbooks/kubernetes/pending-pods.md::1. Incident Identifier",
+        "kubernetes/troubleshooting/debug-running-pods.md::",
+        "sre/runbooks/kubernetes/imagepullbackoff.md::Action C: Force Kubelet Re-evaluation (Safe)"
+      ]
+    },
+    "A2_Sparse": {
+      "mode": "sparse",
+      "fusion": "rrf",
+      "latency": 0.10368539998307824,
+      "total_results": 20,
+      "ordered_by": "retrieval",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 31.9673,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 31.3695,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 26.355,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 4,
+          "source": "sre/postmortems/simulated-incident-oomkilled-cascade.md",
+          "section": "3. Incident Timeline (UTC)",
+          "retrieval_score": 24.2622,
+          "rerank_score": null,
+          "text_preview": "3. Incident Timeline (UTC) - **13:45 UTC:** Release v2.4.1 deployed to productio"
+        },
+        {
+          "rank": 5,
+          "source": "sre/templates/incident-response-template.md",
+          "section": "3. Current Hypotheses and Investigation Log",
+          "retrieval_score": 24.2069,
+          "rerank_score": null,
+          "text_preview": "3. Current Hypotheses and Investigation Log | Timestamp (UTC) | Investigator | O"
+        }
+      ],
+      "all_sources": [
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::9. Decision Tree",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::3. Incident Timeline (UTC)",
+        "sre/templates/incident-response-template.md::3. Current Hypotheses and Investigation Log",
+        "sre/runbooks/prometheus/high-cardinality-problems.md::3. Symptoms",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::7. Read-Only Investigation Commands",
+        "sre/response-procedures/incident-timeline.md::3. Real-Time Timeline Format",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "kubernetes/workloads/jobs.md::Controlling parallelism",
+        "kubernetes/scheduling/pod-priority-preemption.md::Graceful termination of preemption victims",
+        "kubernetes/workloads/pod-lifecycle.md::Example scenarios",
+        "kubernetes/workloads/pod-lifecycle.md::Sidecar containers and restart policies",
+        "kubernetes/workloads/container-lifecycle-hooks.md::Debugging Hook handlers",
+        "kubernetes/workloads/pod-lifecycle.md::Example scenarios",
+        "kubernetes/workloads/pod-lifecycle.md::Example scenarios",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::6. Diagnostic Procedure",
+        "kubernetes/workloads/configure-probes.md::Define a liveness HTTP request"
+      ]
+    },
+    "A3_Hybrid_Weighted": {
+      "mode": "hybrid",
+      "fusion": "weighted",
+      "latency": 0.10771630000090227,
+      "total_results": 20,
+      "ordered_by": "retrieval",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.9536,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.9217,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.8319,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.7136,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.4538,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ],
+      "all_sources": [
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/prometheus/high-cardinality-problems.md::3. Symptoms",
+        "kubernetes/troubleshooting/debug-application-pods.md::My pod stays terminating",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "sre/runbooks/storage/volume-mount-failures.md::1. Incident Identifier",
+        "sre/runbooks/networking/coredns-failures.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/pending-pods.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::6. Diagnostic Procedure",
+        "sre/runbooks/networking/endpointslice-problems.md::8. Expected Outputs",
+        "sre/runbooks/networking/ingress-5xx-errors.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::3. Incident Timeline (UTC)",
+        "sre/templates/incident-response-template.md::3. Current Hypotheses and Investigation Log",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::4. Common Causes",
+        "kubernetes/workloads/pod-lifecycle.md::Pod phase",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::1. Incident Identifier"
+      ]
+    },
+    "A4_Hybrid_RRF": {
+      "mode": "hybrid",
+      "fusion": "rrf",
+      "latency": 0.11512939998647198,
+      "total_results": 20,
+      "ordered_by": "retrieval",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ],
+      "all_sources": [
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/prometheus/high-cardinality-problems.md::3. Symptoms",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::3. Incident Timeline (UTC)",
+        "kubernetes/troubleshooting/debug-application-pods.md::My pod stays terminating",
+        "sre/templates/incident-response-template.md::3. Current Hypotheses and Investigation Log",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/storage/volume-mount-failures.md::1. Incident Identifier",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::6. Diagnostic Procedure",
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/networking/coredns-failures.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/kubernetes/pending-pods.md::9. Decision Tree",
+        "sre/response-procedures/incident-timeline.md::3. Real-Time Timeline Format",
+        "sre/runbooks/networking/endpointslice-problems.md::8. Expected Outputs",
+        "sre/runbooks/networking/ingress-5xx-errors.md::9. Decision Tree",
+        "kubernetes/workloads/jobs.md::Controlling parallelism"
+      ]
+    }
+  },
+  "exp_b": {
+    "B1_Hybrid_HyDE_OFF": {
+      "latency": 0.1042501000338234,
+      "hyde_doc": null,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ],
+      "sources": [
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/prometheus/high-cardinality-problems.md::3. Symptoms",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::3. Incident Timeline (UTC)",
+        "kubernetes/troubleshooting/debug-application-pods.md::My pod stays terminating",
+        "sre/templates/incident-response-template.md::3. Current Hypotheses and Investigation Log",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/storage/volume-mount-failures.md::1. Incident Identifier",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::6. Diagnostic Procedure",
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/networking/coredns-failures.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/kubernetes/pending-pods.md::9. Decision Tree",
+        "sre/response-procedures/incident-timeline.md::3. Real-Time Timeline Format",
+        "sre/runbooks/networking/endpointslice-problems.md::8. Expected Outputs",
+        "sre/runbooks/networking/ingress-5xx-errors.md::9. Decision Tree",
+        "kubernetes/workloads/jobs.md::Controlling parallelism"
+      ]
+    },
+    "B2_Hybrid_HyDE_ON": {
+      "latency": 0.8195533000398427,
+      "hyde_doc": "A Pod terminating with exit code 137 indicates it was forcibly terminated by the kernel via SIGKILL, most commonly due to exceeding the container's memory limit and triggering the OOMKiller. Check the `Last State` in the Pod's `status.containerStatuses` for the `OOMKilled` reason and correlate with `container_memory_working_set_bytes` metrics to confirm the breach. If the OOMKilled flag is absent, investigate node-level resource pressure or a manual `kubectl delete pod` command that bypassed the graceful termination period.",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 0.6667,
+          "rerank_score": null,
+          "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5769,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.4762,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.4,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.3333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - `ExitCode: 137 Reason: OOMKilled`: Confirms cgroup memory "
+        }
+      ],
+      "sources": [
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/kubernetes/oomkilled.md::8. Expected Outputs",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "kubernetes/workloads/pod-lifecycle.md::Pod Termination Flow {#pod-termination-flow}",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::7. Read-Only Investigation Commands",
+        "kubernetes/workloads/pod-lifecycle.md::Pod Termination Flow {#pod-termination-flow}",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::3. Incident Timeline (UTC)",
+        "kubernetes/workloads/pod-lifecycle.md::Forced Pod termination {#pod-termination-forced}",
+        "kubernetes/troubleshooting/determine-pod-failure-reason.md::Writing and reading a termination message",
+        "kubernetes/workloads/pod-lifecycle.md::`Terminated` {#container-state-terminated}",
+        "kubernetes/workloads/pod-lifecycle.md::Forced Pod termination {#pod-termination-forced}",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "kubernetes/scheduling/node-pressure-eviction.md::Node out of memory behavior",
+        "sre/runbooks/kubernetes/oomkilled.md::6. Diagnostic Procedure",
+        "sre/response-procedures/incident-timeline.md::3. Real-Time Timeline Format",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::5. Contributing Factors"
+      ]
+    },
+    "B3_Dense_HyDE_ON": {
+      "latency": 0.42945489997509867,
+      "hyde_doc": "A Pod terminating with exit code 137 indicates it was forcibly terminated by the kernel via SIGKILL, most commonly due to exceeding the container's memory limit and triggering the OOMKiller. Check the `Last State` in the Pod's `status.containerStatuses` for the `OOMKilled` reason and correlate with `container_memory_working_set_bytes` metrics to confirm the breach. If the OOMKilled flag is absent, investigate node-level resource pressure or a manual `kubectl delete pod` command that bypassed the graceful termination period.",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.8483,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8436,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 3,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.8319,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```   Type    Reason     Age   From               Mes"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.8244,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 0.8081,
+          "rerank_score": null,
+          "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+        }
+      ],
+      "sources": [
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "kubernetes/troubleshooting/determine-pod-failure-reason.md::Writing and reading a termination message",
+        "kubernetes/workloads/pod-lifecycle.md::Pod Termination Flow {#pod-termination-flow}",
+        "kubernetes/workloads/pod-lifecycle.md::Pod Termination Flow {#pod-termination-flow}",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "kubernetes/scheduling/node-pressure-eviction.md::Node out of memory behavior",
+        "sre/response-procedures/incident-timeline.md::3. Real-Time Timeline Format",
+        "kubernetes/workloads/pod-lifecycle.md::Pod phase",
+        "kubernetes/troubleshooting/determine-pod-failure-reason.md::Writing and reading a termination message",
+        "kubernetes/workloads/pod-lifecycle.md::`Terminated` {#container-state-terminated}",
+        "kubernetes/workloads/pod-lifecycle.md::Forced Pod termination {#pod-termination-forced}",
+        "kubernetes/workloads/pod-lifecycle.md::Termination of Pods {#pod-termination}",
+        "kubernetes/workloads/pod-lifecycle.md::Termination of Pods {#pod-termination}",
+        "kubernetes/troubleshooting/determine-pod-failure-reason.md::Writing and reading a termination message",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::9. Decision Tree"
+      ]
+    },
+    "B4_Sparse_HyDE_ON": {
+      "latency": 0.5483669000095688,
+      "hyde_doc": "A Pod terminating with exit code 137 indicates it was forcibly terminated by the kernel via SIGKILL, most commonly due to exceeding the container's memory limit and triggering the OOMKiller. Check the `Last State` in the Pod's `status.containerStatuses` for the `OOMKilled` reason and correlate with `container_memory_working_set_bytes` metrics to confirm the breach. If the OOMKilled flag is absent, investigate node-level resource pressure or a manual `kubectl delete pod` command that bypassed the graceful termination period.",
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 117.0811,
+          "rerank_score": null,
+          "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 108.9493,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - `ExitCode: 137 Reason: OOMKilled`: Confirms cgroup memory "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 83.6058,
+          "rerank_score": null,
+          "text_preview": "7. Read-Only Investigation Commands Run these read-only commands in order:  ```b"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 73.3565,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/postmortems/simulated-incident-oomkilled-cascade.md",
+          "section": "3. Incident Timeline (UTC)",
+          "retrieval_score": 72.9787,
+          "rerank_score": null,
+          "text_preview": "3. Incident Timeline (UTC) - **13:45 UTC:** Release v2.4.1 deployed to productio"
+        }
+      ],
+      "sources": [
+        "sre/runbooks/kubernetes/oomkilled.md::7. Read-Only Investigation Commands",
+        "sre/runbooks/kubernetes/oomkilled.md::8. Expected Outputs",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::7. Read-Only Investigation Commands",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::3. Incident Timeline (UTC)",
+        "sre/runbooks/kubernetes/crashloopbackoff.md::8. Expected Outputs",
+        "kubernetes/workloads/pod-lifecycle.md::Pod Termination Flow {#pod-termination-flow}",
+        "kubernetes/workloads/pod-lifecycle.md::Forced Pod termination {#pod-termination-forced}",
+        "kubernetes/workloads/pod-lifecycle.md::Forced Pod termination {#pod-termination-forced}",
+        "sre/runbooks/kubernetes/oomkilled.md::6. Diagnostic Procedure",
+        "sre/postmortems/simulated-incident-oomkilled-cascade.md::5. Contributing Factors",
+        "sre/runbooks/kubernetes/oomkilled.md::3. Symptoms",
+        "kubernetes/configuration/manage-resources-containers.md::How Kubernetes applies resource requests and limits {#how-pods-with-resource-limits-are-run}",
+        "kubernetes/workloads/pods.md::Resource requests and limits",
+        "sre/runbooks/kubernetes/oomkilled.md::4. Common Causes",
+        "kubernetes/configuration/manage-resources-containers.md::My container is terminated",
+        "kubernetes/workloads/pod-lifecycle.md::Pod Termination Flow {#pod-termination-flow}",
+        "sre/runbooks/kubernetes/oomkilled.md::11. Verification After Remediation",
+        "sre/runbooks/kubernetes/oomkilled.md::9. Decision Tree",
+        "kubernetes/workloads/pod-lifecycle.md::`Terminated` {#container-state-terminated}"
+      ]
+    }
+  },
+  "exp_c": {
+    "C1_Rerank_OFF": {
+      "latency": 0.10409559996332973,
+      "ordered_by": "retrieval",
+      "authoritative": false,
+      "total_results": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ]
+    },
+    "C2_Rerank_ON": {
+      "latency": 0.8254605000256561,
+      "ordered_by": "rerank",
+      "authoritative": true,
+      "total_results": 5,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": 0.9987,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 0.1111,
+          "rerank_score": 0.9967,
+          "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": 0.9954,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        },
+        {
+          "rank": 4,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": 0.9883,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": 0.976,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        }
+      ]
+    }
+  },
+  "exp_d": {
+    "D1_Dense_Rerank_OFF": {
+      "mode": "dense",
+      "rerank": false,
+      "latency": 0.020876700000371784,
+      "ordered_by": "retrieval",
+      "authoritative": false,
+      "total": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.7454,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.7412,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 3,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.7345,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 4,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.7309,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 5,
+          "source": "kubernetes/troubleshooting/debug-application-pods.md",
+          "section": "My pod stays terminating",
+          "retrieval_score": 0.7212,
+          "rerank_score": null,
+          "text_preview": "My pod stays terminating If a Pod is stuck in the `Terminating` state, it means "
+        }
+      ]
+    },
+    "D2_Dense_Rerank_ON": {
+      "mode": "dense",
+      "rerank": true,
+      "latency": 0.505546200030949,
+      "ordered_by": "rerank",
+      "authoritative": true,
+      "total": 5,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.7309,
+          "rerank_score": 0.9987,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.7061,
+          "rerank_score": 0.9954,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.7412,
+          "rerank_score": 0.9883,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 4,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.7454,
+          "rerank_score": 0.976,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.7,
+          "rerank_score": 0.9019,
+          "text_preview": "9. Decision Tree ```                          [Container Exited 137 / OOMKilled]"
+        }
+      ]
+    },
+    "D3_Sparse_Rerank_OFF": {
+      "mode": "sparse",
+      "rerank": false,
+      "latency": 0.09903179999673739,
+      "ordered_by": "retrieval",
+      "authoritative": false,
+      "total": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 31.9673,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 31.3695,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 26.355,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 4,
+          "source": "sre/postmortems/simulated-incident-oomkilled-cascade.md",
+          "section": "3. Incident Timeline (UTC)",
+          "retrieval_score": 24.2622,
+          "rerank_score": null,
+          "text_preview": "3. Incident Timeline (UTC) - **13:45 UTC:** Release v2.4.1 deployed to productio"
+        },
+        {
+          "rank": 5,
+          "source": "sre/templates/incident-response-template.md",
+          "section": "3. Current Hypotheses and Investigation Log",
+          "retrieval_score": 24.2069,
+          "rerank_score": null,
+          "text_preview": "3. Current Hypotheses and Investigation Log | Timestamp (UTC) | Investigator | O"
+        }
+      ]
+    },
+    "D4_Sparse_Rerank_ON": {
+      "mode": "sparse",
+      "rerank": true,
+      "latency": 0.7882863999693654,
+      "ordered_by": "rerank",
+      "authoritative": true,
+      "total": 5,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 31.3695,
+          "rerank_score": 0.9987,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 20.0683,
+          "rerank_score": 0.9967,
+          "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 23.8167,
+          "rerank_score": 0.9954,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        },
+        {
+          "rank": 4,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 31.9673,
+          "rerank_score": 0.9883,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 26.355,
+          "rerank_score": 0.976,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        }
+      ]
+    },
+    "D5_Hybrid_Rerank_OFF": {
+      "mode": "hybrid",
+      "rerank": false,
+      "latency": 0.12120659998618066,
+      "ordered_by": "retrieval",
+      "authoritative": false,
+      "total": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ]
+    },
+    "D6_Hybrid_Rerank_ON": {
+      "mode": "hybrid",
+      "rerank": true,
+      "latency": 0.7880979999899864,
+      "ordered_by": "rerank",
+      "authoritative": true,
+      "total": 5,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": 0.9987,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "7. Read-Only Investigation Commands",
+          "retrieval_score": 0.1111,
+          "rerank_score": 0.9967,
+          "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": 0.9954,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        },
+        {
+          "rank": 4,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": 0.9883,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": 0.976,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        }
+      ]
+    }
+  },
+  "exp_e": {
+    "E1_CrashLoop": {
+      "query": "Why is my pod stuck in CrashLoopBackOff with exit code 137?",
+      "results": {
+        "dense": {
+          "latency": 0.02542150003137067,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.82,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/kubernetes/deployment-rollout-failures.md",
+              "section": "4. Common Causes",
+              "retrieval_score": 0.7889,
+              "rerank_score": null,
+              "text_preview": "4. Common Causes 1. **New Pods Failing Startup / Probes:** New pods enter `Crash"
+            },
+            {
+              "rank": 3,
+              "source": "kubernetes/workloads/pod-lifecycle.md",
+              "section": "How Pods handle problems with containers {#container-restarts}",
+              "retrieval_score": 0.7811,
+              "rerank_score": null,
+              "text_preview": "How Pods handle problems with containers {#container-restarts} The `CrashLoopBac"
+            },
+            {
+              "rank": 4,
+              "source": "kubernetes/workloads/pod-lifecycle.md",
+              "section": "How Pods handle problems with containers {#container-restarts}",
+              "retrieval_score": 0.7665,
+              "rerank_score": null,
+              "text_preview": "How Pods handle problems with containers {#container-restarts} In practice, a `C"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/kubernetes/oomkilled.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.7643,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/crashloopbackoff.md",
+            "sre/runbooks/kubernetes/deployment-rollout-failures.md",
+            "kubernetes/workloads/pod-lifecycle.md",
+            "kubernetes/workloads/pod-lifecycle.md",
+            "sre/runbooks/kubernetes/oomkilled.md"
+          ]
+        },
+        "sparse": {
+          "latency": 0.10989159997552633,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 35.5697,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/kubernetes/oomkilled.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 33.402,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+            },
+            {
+              "rank": 3,
+              "source": "sre/postmortems/simulated-incident-oomkilled-cascade.md",
+              "section": "3. Incident Timeline (UTC)",
+              "retrieval_score": 32.1928,
+              "rerank_score": null,
+              "text_preview": "3. Incident Timeline (UTC) - **13:45 UTC:** Release v2.4.1 deployed to productio"
+            },
+            {
+              "rank": 4,
+              "source": "sre/templates/incident-response-template.md",
+              "section": "3. Current Hypotheses and Investigation Log",
+              "retrieval_score": 24.2069,
+              "rerank_score": null,
+              "text_preview": "3. Current Hypotheses and Investigation Log | Timestamp (UTC) | Investigator | O"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 23.8167,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/crashloopbackoff.md",
+            "sre/runbooks/kubernetes/oomkilled.md",
+            "sre/postmortems/simulated-incident-oomkilled-cascade.md",
+            "sre/templates/incident-response-template.md",
+            "sre/runbooks/prometheus/high-cardinality-problems.md"
+          ]
+        },
+        "hybrid": {
+          "latency": 0.11674730002414435,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 1.0,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/kubernetes/oomkilled.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.5,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+            },
+            {
+              "rank": 3,
+              "source": "kubernetes/workloads/pod-lifecycle.md",
+              "section": "How Pods handle problems with containers {#container-restarts}",
+              "retrieval_score": 0.3409,
+              "rerank_score": null,
+              "text_preview": "How Pods handle problems with containers {#container-restarts} The `CrashLoopBac"
+            },
+            {
+              "rank": 4,
+              "source": "sre/runbooks/kubernetes/deployment-rollout-failures.md",
+              "section": "4. Common Causes",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "4. Common Causes 1. **New Pods Failing Startup / Probes:** New pods enter `Crash"
+            },
+            {
+              "rank": 5,
+              "source": "kubernetes/configuration/manage-resources-containers.md",
+              "section": "My container is terminated",
+              "retrieval_score": 0.25,
+              "rerank_score": null,
+              "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/crashloopbackoff.md",
+            "sre/runbooks/kubernetes/oomkilled.md",
+            "kubernetes/workloads/pod-lifecycle.md",
+            "sre/runbooks/kubernetes/deployment-rollout-failures.md",
+            "kubernetes/configuration/manage-resources-containers.md"
+          ]
+        }
+      }
+    },
+    "E2_Ingress502": {
+      "query": "Our ingress started returning 502s right after a deployment. Where should I look?",
+      "results": {
+        "dense": {
+          "latency": 0.022060599992983043,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/probe-failures.md",
+              "section": "5. Impact Assessment",
+              "retrieval_score": 0.7673,
+              "rerank_score": null,
+              "text_preview": "5. Impact Assessment - Readiness failure: Zero endpoints available, causing Ingr"
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/networking/ingress-5xx-errors.md",
+              "section": "8. Expected Outputs",
+              "retrieval_score": 0.7513,
+              "rerank_score": null,
+              "text_preview": "8. Expected Outputs - `502: Connection refused`: Backend container not listening"
+            },
+            {
+              "rank": 3,
+              "source": "sre/postmortems/simulated-incident-helm-failed-upgrade.md",
+              "section": "1. Incident Summary",
+              "retrieval_score": 0.7415,
+              "rerank_score": null,
+              "text_preview": "1. Incident Summary On 2026-10-19 at 16:04 UTC, a production Helm upgrade of the"
+            },
+            {
+              "rank": 4,
+              "source": "sre/runbooks/networking/ingress-5xx-errors.md",
+              "section": "6. Diagnostic Procedure",
+              "retrieval_score": 0.7393,
+              "rerank_score": null,
+              "text_preview": "6. Diagnostic Procedure 1. Check HTTP status code distribution in Ingress contro"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/networking/ingress-5xx-errors.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.7386,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Ingress 5xx Error Detected]      "
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/probe-failures.md",
+            "sre/runbooks/networking/ingress-5xx-errors.md",
+            "sre/postmortems/simulated-incident-helm-failed-upgrade.md",
+            "sre/runbooks/networking/ingress-5xx-errors.md",
+            "sre/runbooks/networking/ingress-5xx-errors.md"
+          ]
+        },
+        "sparse": {
+          "latency": 0.1302510999958031,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "prometheus/exporters/multi-target-exporter.md",
+              "section": "Querying multi-target exporters with Prometheus",
+              "retrieval_score": 17.3897,
+              "rerank_score": null,
+              "text_preview": "Querying multi-target exporters with Prometheus After saving the config file swi"
+            },
+            {
+              "rank": 2,
+              "source": "helm/fundamentals/using-helm.md",
+              "section": "Helpful Options for Install/Upgrade/Rollback",
+              "retrieval_score": 17.2152,
+              "rerank_score": null,
+              "text_preview": "Helpful Options for Install/Upgrade/Rollback - `--timeout`: A [Go duration](http"
+            },
+            {
+              "rank": 3,
+              "source": "prometheus/troubleshooting/migration-v3.md",
+              "section": "Range selectors and lookback exclude samples coinciding with the left boundary",
+              "retrieval_score": 16.251,
+              "rerank_score": null,
+              "text_preview": "Range selectors and lookback exclude samples coinciding with the left boundary L"
+            },
+            {
+              "rank": 4,
+              "source": "prometheus/promql/operators.md",
+              "section": "Group modifiers",
+              "retrieval_score": 15.5435,
+              "rerank_score": null,
+              "text_preview": "Group modifiers These group modifiers enable many-to-one/one-to-many vector matc"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/networking/ingress-5xx-errors.md",
+              "section": "11. Verification After Remediation",
+              "retrieval_score": 15.4808,
+              "rerank_score": null,
+              "text_preview": "11. Verification After Remediation 1. Monitor Ingress access logs for 5 minutes:"
+            }
+          ],
+          "sources": [
+            "prometheus/exporters/multi-target-exporter.md",
+            "helm/fundamentals/using-helm.md",
+            "prometheus/troubleshooting/migration-v3.md",
+            "prometheus/promql/operators.md",
+            "sre/runbooks/networking/ingress-5xx-errors.md"
+          ]
+        },
+        "hybrid": {
+          "latency": 0.1235368000343442,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/probe-failures.md",
+              "section": "5. Impact Assessment",
+              "retrieval_score": 0.5,
+              "rerank_score": null,
+              "text_preview": "5. Impact Assessment - Readiness failure: Zero endpoints available, causing Ingr"
+            },
+            {
+              "rank": 2,
+              "source": "prometheus/exporters/multi-target-exporter.md",
+              "section": "Querying multi-target exporters with Prometheus",
+              "retrieval_score": 0.5,
+              "rerank_score": null,
+              "text_preview": "Querying multi-target exporters with Prometheus After saving the config file swi"
+            },
+            {
+              "rank": 3,
+              "source": "sre/runbooks/networking/ingress-5xx-errors.md",
+              "section": "8. Expected Outputs",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "8. Expected Outputs - `502: Connection refused`: Backend container not listening"
+            },
+            {
+              "rank": 4,
+              "source": "helm/fundamentals/using-helm.md",
+              "section": "Helpful Options for Install/Upgrade/Rollback",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "Helpful Options for Install/Upgrade/Rollback - `--timeout`: A [Go duration](http"
+            },
+            {
+              "rank": 5,
+              "source": "sre/postmortems/simulated-incident-helm-failed-upgrade.md",
+              "section": "1. Incident Summary",
+              "retrieval_score": 0.25,
+              "rerank_score": null,
+              "text_preview": "1. Incident Summary On 2026-10-19 at 16:04 UTC, a production Helm upgrade of the"
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/probe-failures.md",
+            "prometheus/exporters/multi-target-exporter.md",
+            "sre/runbooks/networking/ingress-5xx-errors.md",
+            "helm/fundamentals/using-helm.md",
+            "sre/postmortems/simulated-incident-helm-failed-upgrade.md"
+          ]
+        }
+      }
+    },
+    "E3_PrometheusPending": {
+      "query": "How do I investigate Prometheus alerts that remain pending?",
+      "results": {
+        "dense": {
+          "latency": 0.02037049998762086,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "prometheus/alertmanager/alerting-rules.md",
+              "section": "Inspecting alerts during runtime",
+              "retrieval_score": 0.8142,
+              "rerank_score": null,
+              "text_preview": "Inspecting alerts during runtime To manually inspect which alerts are active (pe"
+            },
+            {
+              "rank": 2,
+              "source": "prometheus/promql/query-api.md",
+              "section": "Active Notifications",
+              "retrieval_score": 0.8007,
+              "rerank_score": null,
+              "text_preview": "Active Notifications The `/api/v1/notifications` endpoint returns a list of all "
+            },
+            {
+              "rank": 3,
+              "source": "prometheus/promql/promtool.md",
+              "section": "",
+              "retrieval_score": 0.7969,
+              "rerank_score": null,
+              "text_preview": "Tooling for the Prometheus monitoring system."
+            },
+            {
+              "rank": 4,
+              "source": "prometheus/promql/query-api.md",
+              "section": "Alertmanagers",
+              "retrieval_score": 0.7955,
+              "rerank_score": null,
+              "text_preview": "Alertmanagers The following endpoint returns an overview of the current state of"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/prometheus/alertmanager-notification-failures.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.7874,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - Prometheus alerts are `FIRING`, but on-call engineers receive zero"
+            }
+          ],
+          "sources": [
+            "prometheus/alertmanager/alerting-rules.md",
+            "prometheus/promql/query-api.md",
+            "prometheus/promql/promtool.md",
+            "prometheus/promql/query-api.md",
+            "sre/runbooks/prometheus/alertmanager-notification-failures.md"
+          ]
+        },
+        "sparse": {
+          "latency": 0.09873549995245412,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "prometheus/alertmanager/alerting-rules.md",
+              "section": "Inspecting alerts during runtime",
+              "retrieval_score": 17.915,
+              "rerank_score": null,
+              "text_preview": "Inspecting alerts during runtime To manually inspect which alerts are active (pe"
+            },
+            {
+              "rank": 2,
+              "source": "prometheus/promql/recording-rules.md",
+              "section": "`<rule>`",
+              "retrieval_score": 17.4774,
+              "rerank_score": null,
+              "text_preview": "`<rule>` The syntax for alerting rules is:  ```yaml # The name of the alert. Mus"
+            },
+            {
+              "rank": 3,
+              "source": "prometheus/alertmanager/alerting-rules.md",
+              "section": "Defining alerting rules",
+              "retrieval_score": 15.7848,
+              "rerank_score": null,
+              "text_preview": "Defining alerting rules The optional `for` clause causes Prometheus to wait for "
+            },
+            {
+              "rank": 4,
+              "source": "prometheus/kubernetes-monitoring/remote-write-practices.md",
+              "section": "Resource usage",
+              "retrieval_score": 13.9554,
+              "rerank_score": null,
+              "text_preview": "Resource usage Remote write will also increase CPU and network usage. However, f"
+            },
+            {
+              "rank": 5,
+              "source": "sre/incidents/simulated-case-study-cert-expiration-outage.md",
+              "section": "4. Key Takeaways",
+              "retrieval_score": 13.9468,
+              "rerank_score": null,
+              "text_preview": "4. Key Takeaways - Certificate expiration must be monitored with high-priority P"
+            }
+          ],
+          "sources": [
+            "prometheus/alertmanager/alerting-rules.md",
+            "prometheus/promql/recording-rules.md",
+            "prometheus/alertmanager/alerting-rules.md",
+            "prometheus/kubernetes-monitoring/remote-write-practices.md",
+            "sre/incidents/simulated-case-study-cert-expiration-outage.md"
+          ]
+        },
+        "hybrid": {
+          "latency": 0.11729790002573282,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "prometheus/alertmanager/alerting-rules.md",
+              "section": "Inspecting alerts during runtime",
+              "retrieval_score": 1.0,
+              "rerank_score": null,
+              "text_preview": "Inspecting alerts during runtime To manually inspect which alerts are active (pe"
+            },
+            {
+              "rank": 2,
+              "source": "prometheus/promql/query-api.md",
+              "section": "Active Notifications",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "Active Notifications The `/api/v1/notifications` endpoint returns a list of all "
+            },
+            {
+              "rank": 3,
+              "source": "prometheus/promql/recording-rules.md",
+              "section": "`<rule>`",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "`<rule>` The syntax for alerting rules is:  ```yaml # The name of the alert. Mus"
+            },
+            {
+              "rank": 4,
+              "source": "prometheus/alertmanager/alerting-rules.md",
+              "section": "Defining alerting rules",
+              "retrieval_score": 0.3,
+              "rerank_score": null,
+              "text_preview": "Defining alerting rules The optional `for` clause causes Prometheus to wait for "
+            },
+            {
+              "rank": 5,
+              "source": "prometheus/promql/promtool.md",
+              "section": "",
+              "retrieval_score": 0.25,
+              "rerank_score": null,
+              "text_preview": "Tooling for the Prometheus monitoring system."
+            }
+          ],
+          "sources": [
+            "prometheus/alertmanager/alerting-rules.md",
+            "prometheus/promql/query-api.md",
+            "prometheus/promql/recording-rules.md",
+            "prometheus/alertmanager/alerting-rules.md",
+            "prometheus/promql/promtool.md"
+          ]
+        }
+      }
+    },
+    "E4_HelmFailure": {
+      "query": "How can I troubleshoot Helm release upgrade failures?",
+      "results": {
+        "dense": {
+          "latency": 0.019940600031986833,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/helm/pending-release-state.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.8609,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `helm upgrade` or `helm rollback` returns: `Error: UPGRADE FAILED:"
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/helm/upgrade-failures.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.8599,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `helm upgrade` returns error: `UPGRADE FAILED: cannot patch ... wi"
+            },
+            {
+              "rank": 3,
+              "source": "sre/runbooks/helm/chart-installation-failures.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.8136,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Helm Install Failure]            "
+            },
+            {
+              "rank": 4,
+              "source": "sre/runbooks/helm/upgrade-failures.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.8029,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Helm Upgrade Failed]             "
+            },
+            {
+              "rank": 5,
+              "source": "helm/fundamentals/cheatsheet.md",
+              "section": "Perform App Upgrade and Rollback",
+              "retrieval_score": 0.8025,
+              "rerank_score": null,
+              "text_preview": "Perform App Upgrade and Rollback ```bash helm upgrade <release> <chart>         "
+            }
+          ],
+          "sources": [
+            "sre/runbooks/helm/pending-release-state.md",
+            "sre/runbooks/helm/upgrade-failures.md",
+            "sre/runbooks/helm/chart-installation-failures.md",
+            "sre/runbooks/helm/upgrade-failures.md",
+            "helm/fundamentals/cheatsheet.md"
+          ]
+        },
+        "sparse": {
+          "latency": 0.10152710002148524,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "helm/fundamentals/cheatsheet.md",
+              "section": "Perform App Upgrade and Rollback",
+              "retrieval_score": 24.7632,
+              "rerank_score": null,
+              "text_preview": "Perform App Upgrade and Rollback ```bash helm upgrade <release> <chart>         "
+            },
+            {
+              "rank": 2,
+              "source": "helm/fundamentals/using-helm.md",
+              "section": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failure",
+              "retrieval_score": 24.6233,
+              "rerank_score": null,
+              "text_preview": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failu"
+            },
+            {
+              "rank": 3,
+              "source": "helm/fundamentals/using-helm.md",
+              "section": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failure",
+              "retrieval_score": 23.8369,
+              "rerank_score": null,
+              "text_preview": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failu"
+            },
+            {
+              "rank": 4,
+              "source": "helm/fundamentals/glossary.md",
+              "section": "Rollback",
+              "retrieval_score": 22.7193,
+              "rerank_score": null,
+              "text_preview": "Rollback A release can be upgraded to a newer chart or configuration. But since "
+            },
+            {
+              "rank": 5,
+              "source": "helm/fundamentals/using-helm.md",
+              "section": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failure",
+              "retrieval_score": 21.9032,
+              "rerank_score": null,
+              "text_preview": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failu"
+            }
+          ],
+          "sources": [
+            "helm/fundamentals/cheatsheet.md",
+            "helm/fundamentals/using-helm.md",
+            "helm/fundamentals/using-helm.md",
+            "helm/fundamentals/glossary.md",
+            "helm/fundamentals/using-helm.md"
+          ]
+        },
+        "hybrid": {
+          "latency": 0.11277989996597171,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "helm/fundamentals/cheatsheet.md",
+              "section": "Perform App Upgrade and Rollback",
+              "retrieval_score": 0.6667,
+              "rerank_score": null,
+              "text_preview": "Perform App Upgrade and Rollback ```bash helm upgrade <release> <chart>         "
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/helm/pending-release-state.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.5,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `helm upgrade` or `helm rollback` returns: `Error: UPGRADE FAILED:"
+            },
+            {
+              "rank": 3,
+              "source": "helm/fundamentals/using-helm.md",
+              "section": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failure",
+              "retrieval_score": 0.4167,
+              "rerank_score": null,
+              "text_preview": "'helm upgrade' and 'helm rollback': Upgrading a Release, and Recovering on Failu"
+            },
+            {
+              "rank": 4,
+              "source": "sre/runbooks/helm/upgrade-failures.md",
+              "section": "3. Symptoms",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "3. Symptoms - `helm upgrade` returns error: `UPGRADE FAILED: cannot patch ... wi"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/helm/chart-installation-failures.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.25,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Helm Install Failure]            "
+            }
+          ],
+          "sources": [
+            "helm/fundamentals/cheatsheet.md",
+            "sre/runbooks/helm/pending-release-state.md",
+            "helm/fundamentals/using-helm.md",
+            "sre/runbooks/helm/upgrade-failures.md",
+            "sre/runbooks/helm/chart-installation-failures.md"
+          ]
+        }
+      }
+    },
+    "E5_NodeNotReady": {
+      "query": "How do I investigate Kubernetes node NotReady conditions?",
+      "results": {
+        "dense": {
+          "latency": 0.018270200002007186,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "kubernetes/architecture/nodes.md",
+              "section": "Management",
+              "retrieval_score": 0.8272,
+              "rerank_score": null,
+              "text_preview": "Management Kubernetes creates a Node object internally (the representation). Kub"
+            },
+            {
+              "rank": 2,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.8196,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Node in NotReady State]          "
+            },
+            {
+              "rank": 3,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "7. Read-Only Investigation Commands",
+              "retrieval_score": 0.802,
+              "rerank_score": null,
+              "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Inspect node status and conditi"
+            },
+            {
+              "rank": 4,
+              "source": "sre/runbooks/kubernetes/pending-pods.md",
+              "section": "7. Read-Only Investigation Commands",
+              "retrieval_score": 0.8011,
+              "rerank_score": null,
+              "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Inspect scheduler failure reaso"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "6. Diagnostic Procedure",
+              "retrieval_score": 0.7976,
+              "rerank_score": null,
+              "text_preview": "6. Diagnostic Procedure 1. Check node conditions and exact transition timestamp."
+            }
+          ],
+          "sources": [
+            "kubernetes/architecture/nodes.md",
+            "sre/runbooks/kubernetes/nodenotready.md",
+            "sre/runbooks/kubernetes/nodenotready.md",
+            "sre/runbooks/kubernetes/pending-pods.md",
+            "sre/runbooks/kubernetes/nodenotready.md"
+          ]
+        },
+        "sparse": {
+          "latency": 0.08734819997334853,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "7. Read-Only Investigation Commands",
+              "retrieval_score": 25.5616,
+              "rerank_score": null,
+              "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Inspect node status and conditi"
+            },
+            {
+              "rank": 2,
+              "source": "kubernetes/cluster-administration/node-shutdown.md",
+              "section": "Configuring graceful node shutdown",
+              "retrieval_score": 19.5208,
+              "rerank_score": null,
+              "text_preview": "Configuring graceful node shutdown Note that by default, both configuration opti"
+            },
+            {
+              "rank": 3,
+              "source": "kubernetes/troubleshooting/monitor-node-health.md",
+              "section": "",
+              "retrieval_score": 18.3633,
+              "rerank_score": null,
+              "text_preview": "*Node Problem Detector* is a daemon for monitoring and reporting about a node's "
+            },
+            {
+              "rank": 4,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "1. Incident Identifier",
+              "retrieval_score": 16.0732,
+              "rerank_score": null,
+              "text_preview": "1. Incident Identifier - **ID:** RB-K8S-009 - **Severity:** P1 (Critical) / P2 ("
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/kubernetes/oomkilled.md",
+              "section": "7. Read-Only Investigation Commands",
+              "retrieval_score": 16.0487,
+              "rerank_score": null,
+              "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Verify OOMKilled status and exi"
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/nodenotready.md",
+            "kubernetes/cluster-administration/node-shutdown.md",
+            "kubernetes/troubleshooting/monitor-node-health.md",
+            "sre/runbooks/kubernetes/nodenotready.md",
+            "sre/runbooks/kubernetes/oomkilled.md"
+          ]
+        },
+        "hybrid": {
+          "latency": 0.10237050004070625,
+          "total": 20,
+          "top5": [
+            {
+              "rank": 1,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "7. Read-Only Investigation Commands",
+              "retrieval_score": 0.75,
+              "rerank_score": null,
+              "text_preview": "7. Read-Only Investigation Commands ```bash # 1. Inspect node status and conditi"
+            },
+            {
+              "rank": 2,
+              "source": "kubernetes/architecture/nodes.md",
+              "section": "Management",
+              "retrieval_score": 0.5,
+              "rerank_score": null,
+              "text_preview": "Management Kubernetes creates a Node object internally (the representation). Kub"
+            },
+            {
+              "rank": 3,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "9. Decision Tree",
+              "retrieval_score": 0.381,
+              "rerank_score": null,
+              "text_preview": "9. Decision Tree ```                          [Node in NotReady State]          "
+            },
+            {
+              "rank": 4,
+              "source": "kubernetes/cluster-administration/node-shutdown.md",
+              "section": "Configuring graceful node shutdown",
+              "retrieval_score": 0.3333,
+              "rerank_score": null,
+              "text_preview": "Configuring graceful node shutdown Note that by default, both configuration opti"
+            },
+            {
+              "rank": 5,
+              "source": "sre/runbooks/kubernetes/nodenotready.md",
+              "section": "1. Incident Identifier",
+              "retrieval_score": 0.2556,
+              "rerank_score": null,
+              "text_preview": "1. Incident Identifier - **ID:** RB-K8S-009 - **Severity:** P1 (Critical) / P2 ("
+            }
+          ],
+          "sources": [
+            "sre/runbooks/kubernetes/nodenotready.md",
+            "kubernetes/architecture/nodes.md",
+            "sre/runbooks/kubernetes/nodenotready.md",
+            "kubernetes/cluster-administration/node-shutdown.md",
+            "sre/runbooks/kubernetes/nodenotready.md"
+          ]
+        }
+      }
+    }
+  },
+  "exp_f": {
+    "run_1": {
+      "latency": 0.1073702999856323,
+      "total": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ],
+      "top1_score": 0.8333
+    },
+    "run_2": {
+      "latency": 0.10553070000605658,
+      "total": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ],
+      "top1_score": 0.8333
+    },
+    "run_3": {
+      "latency": 0.09471739997388795,
+      "total": 20,
+      "top5": [
+        {
+          "rank": 1,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "8. Expected Outputs",
+          "retrieval_score": 0.8333,
+          "rerank_score": null,
+          "text_preview": "8. Expected Outputs - **Exit Code 1:** General application error / uncaught runt"
+        },
+        {
+          "rank": 2,
+          "source": "sre/runbooks/kubernetes/crashloopbackoff.md",
+          "section": "9. Decision Tree",
+          "retrieval_score": 0.75,
+          "rerank_score": null,
+          "text_preview": "9. Decision Tree ```                          [Pod in CrashLoopBackOff]         "
+        },
+        {
+          "rank": 3,
+          "source": "sre/runbooks/kubernetes/oomkilled.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.5333,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - `kubectl get pods` displays `STATUS: OOMKilled` or `CrashLoopBackO"
+        },
+        {
+          "rank": 4,
+          "source": "kubernetes/configuration/manage-resources-containers.md",
+          "section": "My container is terminated",
+          "retrieval_score": 0.375,
+          "rerank_score": null,
+          "text_preview": "My container is terminated ```shell kubectl describe pod simmemleak-hra99 ```  T"
+        },
+        {
+          "rank": 5,
+          "source": "sre/runbooks/prometheus/high-cardinality-problems.md",
+          "section": "3. Symptoms",
+          "retrieval_score": 0.254,
+          "rerank_score": null,
+          "text_preview": "3. Symptoms - Prometheus memory usage surges dramatically; pods restart with `OO"
+        }
+      ],
+      "top1_score": 0.8333
+    }
+  },
+  "exp_g": {
+    "empty_query": {
+      "status": 422,
+      "response": {
+        "error": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"query\"],\"msg\":\"String should have at least 1 character\",\"input\":\"\",\"ctx\":{\"min_length\":1}}]}"
+      }
+    },
+    "whitespace_query": {
+      "status": 200,
+      "response": {
+        "query": "   ",
+        "hyde_document": null,
+        "reranked": false,
+        "rerank_is_authoritative": false,
+        "ordered_by": "retrieval",
+        "results": [
+          {
+            "source": "kubernetes/networking/dns-pod-service.md",
+            "section": "A/AAAA records",
+            "retrieval_score": 0.5,
+            "rerank_score": null,
+            "text": "A/AAAA records\n```\n172-17-0-3.barista.cafe.svc.cluster.local\n```"
+          },
+          {
+            "source": "prometheus/troubleshooting/native-histograms.md",
+            "section": "Introduction",
+            "retrieval_score": 0.3333,
+            "rerank_score": null,
+            "text": "Introduction\nWith native histograms, a new structured sample type is introduced. A single\nsample represents the previously known _sum_ and _count_ plus a dynamic set of\nbuckets. This is not limited to ingestion, but PromQL expressions may also\nreturn the new sample type where previously it was only possible to return\nfloat samples.\n\nNative histograms have the following key properties:\n\n1. A sparse bucket representation, allowing (near) zero cost for empty buckets.\n2. Coverage of the full float64 range of values.\n3. No configuration of bucket boundaries during instrumentation.\n4. Dynamic resolution picked according to simple configuration parameters.\n5. Sophisticated exponential bucketing schemas, ensuring mergeability between\n   all histograms using those schemas.\n6. An efficient data representation for both exposition and storage."
+          },
+          {
+            "source": "helm/fundamentals/architecture-overview.md",
+            "section": "Performance",
+            "retrieval_score": 0.25,
+            "rerank_score": null,
+            "text": "Performance\nFaster dependency resolution and new content-based chart caching."
+          },
+          {
+            "source": "prometheus/promql/promtool.md",
+            "section": "`promtool query labels`",
+            "retrieval_score": 0.2,
+            "rerank_score": null,
+            "text": "`promtool query labels`\nRun labels query."
+          },
+          {
+            "source": "prometheus/kubernetes-monitoring/cadvisor.md",
+            "section": "Other expressions",
+            "retrieval_score": 0.1667,
+            "rerank_score": null,
+            "text": "Other expressions\nThe table below lists some other example expressions"
+          },
+          {
+            "source": "sre/runbooks/prometheus/missing-metrics.md",
+            "section": "Action B: Increase Sample Limit (Safe)",
+            "retrieval_score": 0.1429,
+            "rerank_score": null,
+            "text": "Action B: Increase Sample Limit (Safe)\n```yaml\nsampleLimit: 100000\n```"
+          },
+          {
+            "source": "kubernetes/security/pod-security-standards.md",
+            "section": "Restricted",
+            "retrieval_score": 0.125,
+            "rerank_score": null,
+            "text": "Restricted\n<li>Undefined/nil</li> <li><code>NET_BIND_SERVICE</code></li> </ul> </td> </tr> </tbody> </table>"
+          },
+          {
+            "source": "helm/templating/control-structures.md",
+            "section": "Controlling Whitespace",
+            "retrieval_score": 0.1111,
+            "rerank_score": null,
+            "text": "Controlling Whitespace\n```yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: {{ .Release.Name }}-configmap\ndata:\n  myvalue: \"Hello World\"\n  drink: {{ .Values.favorite.drink | default \"tea\" | quote }}\n  food: {{ .Values.favorite.food | upper | quote }}*\n**{{- if eq .Values.favorite.drink \"coffee\" }}\n  mug: \"true\"*\n**{{- end }}\n\n```\n\nKeeping that in mind, we can run our template through Helm and see the result:\n\n```yaml\n# Source: mychart/templates/configmap.yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: clunky-cat-configmap\ndata:\n  myvalue: \"Hello World\"\n  drink: \"coffee\"\n  food: \"PIZZA\"\n  mug: \"true\"\n```\n\nBe careful with the chomping modifiers. It is easy to accidentally do things\nlike this:\n\n```yaml\n  food: {{ .Values.favorite.food | upper | quote }}\n  {{- if eq .Values.favorite.drink \"coffee\" -}}\n  mug: \"true\"\n  {{- end -}}\n\n```"
+          },
+          {
+            "source": "sre/templates/incident-response-template.md",
+            "section": "1. Incident Overview",
+            "retrieval_score": 0.1,
+            "rerank_score": null,
+            "text": "1. Incident Overview\n- **Incident Title:** [P1/P2/P3] <Descriptive Title>\n- **Incident ID:** INC-YYYYMMDD-XXX\n- **Current Severity:** [P1 / P2 / P3 / P4]\n- **Current State:** [Investigating / Mitigating / Monitoring / Resolved]\n- **Incident Commander (IC):** @name\n- **Operations Lead:** @name\n- **Communications Lead:** @name\n- **Scribe:** @name\n- **Incident Channel:** `#incident-YYYYMMDD-name`\n- **Bridge Link:** `<url>`"
+          },
+          {
+            "source": "prometheus/alertmanager/configuration.md",
+            "section": "`<wechat_config>`",
+            "retrieval_score": 0.0909,
+            "rerank_score": null,
+            "text": "`<wechat_config>`\n```yaml\n[ to_user: <string> | default = '{{ template \"wechat.default.to_user\" . }}' ]\n[ to_party: <string> | default = '{{ template \"wechat.default.to_party\" . }}' ]\n[ to_tag: <string> | default = '{{ template \"wechat.default.to_tag\" . }}' ]\n```"
+          },
+          {
+            "source": "helm/templating/control-structures.md",
+            "section": "If/Else",
+            "retrieval_score": 0.0833,
+            "rerank_score": null,
+            "text": "If/Else\nLet's add a simple conditional to our ConfigMap. We'll add another setting if\nthe drink is set to coffee:\n\n```yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: {{ .Release.Name }}-configmap\ndata:\n  myvalue: \"Hello World\"\n  drink: {{ .Values.favorite.drink | default \"tea\" | quote }}\n  food: {{ .Values.favorite.food | upper | quote }}\n  {{ if eq .Values.favorite.drink \"coffee\" }}mug: \"true\"{{ end }}\n```\n\nSince we commented out `drink: coffee` in our last example, the output should\nnot include a `mug: \"true\"` flag. But if we add that line back into our\n`values.yaml` file, the output should look like this:\n\n```yaml\n# Source: mychart/templates/configmap.yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: eyewitness-elk-configmap\ndata:\n  myvalue: \"Hello World\"\n  drink: \"coffee\"\n  food: \"PIZZA\"\n  mug: \"true\"\n```"
+          },
+          {
+            "source": "prometheus/kubernetes-monitoring/remote-write-spec.md",
+            "section": "FAQ",
+            "retrieval_score": 0.0769,
+            "rerank_score": null,
+            "text": "FAQ\n* Simplify communication between senders and receivers, such as configuring required sender features as a single setting, rejecting unsupported modes early on the receiver with `415 HTTP Unsupported Media Type`, and documenting the cost and requirements of each mode.\n* Help the ecosystem adopt stricter semantics, such as letting receivers advertise which mode they require and letting operators monitor mode adoption across senders.\n\nWe defined two progressive modes, `stateless` and `stateless-st`, rather than a single mode or fine-grained capability flags:\n\n* `stateless` mode rules (attaching exemplars to samples or histograms, converting classic histograms to NHCB, and requiring `Metadata.type` with a `METRIC_TYPE_GAUGE` or `_total`-based `METRIC_TYPE_COUNTER` fallback for unknown metric types) make every `TimeSeries` message self-contained and typed."
+          },
+          {
+            "source": "prometheus/kubernetes-monitoring/configuration.md",
+            "section": "`services`",
+            "retrieval_score": 0.0714,
+            "rerank_score": null,
+            "text": "`services`\nnetwork * `__meta_dockerswarm_network_ingress`: whether the network is ingress * `__meta_dockerswarm_network_internal`: whether the network is internal * `__meta_dockerswarm_network_label_<labelname>`: each label of the network, with any unsupported characters converted to an underscore * `__meta_dockerswarm_network_scope`: the scope of the network"
+          },
+          {
+            "source": "prometheus/alertmanager/configuration.md",
+            "section": "File layout and global settings",
+            "retrieval_score": 0.0667,
+            "rerank_score": null,
+            "text": "File layout and global settings\n```yaml\n  [ victorops_api_url: <string> | default = \"https://alert.victorops.com/integrations/generic/20131114/alert/\" ]\n  [ pagerduty_url: <string> | default = \"https://events.pagerduty.com/v2/enqueue\" ]\n  [ opsgenie_api_key: <secret> ]\n  [ opsgenie_api_key_file: <filepath> ]\n  [ opsgenie_api_url: <string> | default = \"https://api.opsgenie.com/\" ]\n  [ rocketchat_api_url: <string> | default = \"https://open.rocket.chat/\" ]\n  # The default Rocketchat sender token. It is mutually exclusive with `rocketchat_token_file`.\n  [ rocketchat_token: <secret> ]\n  # Read the default Rocketchat sender token from a file. It is mutually exclusive with `rocketchat_token`.\n  [ rocketchat_token_file: <filepath> ]\n  # The default Rocketchat sender token ID. It is mutually exclusive with `rocketchat_token_id_file`.\n  [ rocketchat_token_id: <secret> ]\n```"
+          },
+          {
+            "source": "sre/templates/incident-response-template.md",
+            "section": "4. Remediation Plan",
+            "retrieval_score": 0.0625,
+            "rerank_score": null,
+            "text": "4. Remediation Plan\n- [ ] Action 1: `<Immediate mitigation>`\n- [ ] Action 2: `<Verification step>`\n- [ ] Action 3: `<Rollback contingency>`"
+          },
+          {
+            "source": "prometheus/promql/unit-testing-rules.md",
+            "section": "`<test_group>`",
+            "retrieval_score": 0.0588,
+            "rerank_score": null,
+            "text": "`<test_group>`\n``` yaml\n# Unit tests for PromQL expressions.\npromql_expr_test:\n  [ - <promql_test_case> ]\n\n# External labels accessible to the alert template.\nexternal_labels:\n  [ <labelname>: <string> ... ]\n\n# External URL accessible to the alert template.\n# Usually set using --web.external-url.\n  [ external_url: <string> ]\n```"
+          },
+          {
+            "source": "kubernetes/troubleshooting/crictl-troubleshooting.md",
+            "section": "## What's next",
+            "retrieval_score": 0.0556,
+            "rerank_score": null,
+            "text": "## What's next\n* [Learn more about `crictl`](https://github.com/kubernetes-sigs/cri-tools)."
+          },
+          {
+            "source": "helm/operations/helm-show.md",
+            "section": "Options",
+            "retrieval_score": 0.0526,
+            "rerank_score": null,
+            "text": "Options\n```\n  -h, --help   help for show\n```"
+          },
+          {
+            "source": "prometheus/promql/template-examples.md",
+            "section": "Advanced iteration",
+            "retrieval_score": 0.05,
+            "rerank_score": null,
+            "text": "Advanced iteration\n```html\n<table>\n{{ range printf \"node_network_receive_bytes{job='node',instance='%s',device!='lo'}\" .Params.instance | query | sortByLabel \"device\"}}\n  <tr><th colspan=2>{{ .Labels.device }}</th></tr>\n  <tr>\n    <td>Received</td>\n    <td>{{ with printf \"rate(node_network_receive_bytes{job='node',instance='%s',device='%s'}[5m])\" .Labels.instance .Labels.device | query }}{{ . | first | value | humanize }}B/s{{end}}</td>\n  </tr>\n  <tr>\n    <td>Transmitted</td>\n    <td>{{ with printf \"rate(node_network_transmit_bytes{job='node',instance='%s',device='%s'}[5m])\" .Labels.instance .Labels.device | query }}{{ . | first | value | humanize }}B/s{{end}}</td>\n  </tr>{{ end }}\n</table>\n```\n\nHere we iterate over all network devices and display the network traffic for each."
+          },
+          {
+            "source": "prometheus/troubleshooting/native-histograms.md",
+            "section": "Instrumentation libraries",
+            "retrieval_score": 0.0476,
+            "rerank_score": null,
+            "text": "Instrumentation libraries\n| `NativeHistogramBucketFactor` | resulting schema |\n|-------------------------------|------------------|\n|             65536             |    -4            |\n|               256             |    -3            |\n|                16             |    -2            |\n|                 4             |    -1            |\n|                 2             |     0            |\n|                 1.5           |     1            |\n|                 1.2           |     2            |\n|                 1.1           |     3            |\n|                 1.05          |     4            |\n|                 1.03          |     5            |\n|                 1.02          |     6            |\n|                 1.01          |     7            |\n|                 1.005         |     8            |"
+          }
+        ]
+      }
+    },
+    "topk_5": {
+      "status": 200,
+      "count": 5
+    },
+    "topk_50": {
+      "status": 200,
+      "count": 50
+    }
+  }
+}

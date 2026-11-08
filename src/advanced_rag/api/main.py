@@ -20,7 +20,7 @@ from typing import Annotated, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from advanced_rag.certs import enable_system_trust_store
 from advanced_rag.config import get_settings
@@ -55,10 +55,19 @@ class ApproveRequest(BaseModel):
 class RetrieveRequest(BaseModel):
     query: str = Field(min_length=1)
     top_k: int | None = None
+    top_n: int | None = None
     mode: str = Field("hybrid", pattern="^(dense|sparse|hybrid)$")
-    fusion: str = Field("weighted", pattern="^(weighted|rrf)$")
+    fusion: str = Field("rrf", pattern="^(weighted|rrf)$")
     use_hyde: bool = False
-    rerank: bool = True
+    rerank: bool = False
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, v: str) -> str:
+        stripped = v.strip() if isinstance(v, str) else ""
+        if not stripped:
+            raise ValueError("Query cannot be empty or whitespace-only")
+        return stripped
 
 
 class DocumentUploadResponse(BaseModel):
@@ -95,6 +104,10 @@ app = FastAPI(
     "Self-RAG, Text2SQL with approval, caching and guardrails.",
     lifespan=lifespan,
 )
+
+from advanced_rag.api.knowledge import router as knowledge_router
+
+app.include_router(knowledge_router)
 
 
 @app.get("/health")
@@ -168,28 +181,42 @@ def retrieve(request: RetrieveRequest) -> dict[str, Any]:
     """Retrieval without generation - for tuning and for the UI's compare view."""
     from advanced_rag.retrieval import get_retriever
 
+    candidate_count = request.top_k or 20
+    output_count = request.top_n or candidate_count
+
     result = get_retriever().retrieve(
         request.query,
         use_hyde=request.use_hyde,
         rerank=request.rerank,
         mode=request.mode,
         fusion=request.fusion,
-        top_k=request.top_k,
+        top_k=candidate_count,
+        top_n=output_count,
     )
     return {
         "query": request.query,
+        "mode": request.mode,
+        "fusion": request.fusion if request.mode == "hybrid" else None,
+        "candidate_count": candidate_count,
+        "result_count": len(result.chunks),
         "hyde_document": result.hyde_document,
         "reranked": result.reranked,
         # Lets a client tell whether rerank_score drove the ordering or is only
         # being reported alongside it.
         "rerank_is_authoritative": result.cross_encoder,
-        "ordered_by": "rerank" if result.cross_encoder else "retrieval",
+        "ordered_by": "rerank" if (result.reranked and result.cross_encoder) else "retrieval",
+        "latency_ms": {
+            "total": result.elapsed_ms,
+            "hyde": result.hyde_ms,
+            "rerank": result.rerank_ms,
+        },
         "results": [
             {
                 "source": hit.chunk.source,
                 "section": hit.chunk.section,
                 "retrieval_score": round(hit.retrieval_score, 4),
                 "rerank_score": None if hit.rerank_score is None else round(hit.rerank_score, 4),
+                "retrieval_rank": hit.retrieval_rank,
                 "text": hit.chunk.text,
             }
             for hit in result.chunks

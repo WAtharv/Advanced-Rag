@@ -18,6 +18,11 @@ class Document:
     doc_type: str = "runbook"
     metadata: dict[str, Any] = field(default_factory=dict)
     sections: list[Section] | None = None
+    file_type: str | None = None
+    category: str | None = None
+    component: str | None = None
+    source_url: str | None = None
+    source_version: str | None = None
 
 
 class BaseExtractor(ABC):

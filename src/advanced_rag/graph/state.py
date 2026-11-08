@@ -47,6 +47,7 @@ class RagState(TypedDict, total=False):
 
     # ---- retrieval
     chunks: list[RetrievedChunk]
+    context_chunks: list[RetrievedChunk]
     context: str
     hyde_document: str | None
     retrieval_attempts: int
