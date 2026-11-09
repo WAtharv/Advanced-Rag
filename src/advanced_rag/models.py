@@ -120,6 +120,14 @@ class Citation(BaseModel):                              # Stores source referenc
     title: str = ""
     section: str = ""
     score: float = 0.0
+    citation_id: int | None = None                      # 1-based index matching inline [1], [2] context markers
+    document_id: str = ""                               # Unique document identifier
+    doc_type: str = "runbook"                           # Document category/type
+    referenced: bool = False                            # True if inline [n] marker appears in generated answer text
+    source_type: Literal["internal", "external"] = "internal"  # Internal RAG vs external web search
+    url: str | None = None                              # Target URL for external web citations
+    provider: str | None = None                         # Search provider (searxng, tavily)
+    source_domain: str | None = None                    # Source domain for web citations
 
 
 class SqlProposal(BaseModel):                           # Represents AI-generated SQL waiting for approval.
@@ -210,6 +218,10 @@ class AnswerResponse(BaseModel):            # Final API response sent back to fr
     input_tokens: int = 0
     output_tokens: int = 0
     latency_ms: int = 0
+    external_search_used: bool = False
+    external_search_provider: str = ""
+    external_sources_count: int = 0
+    external_search_latency_ms: float = 0.0
 
 
 """

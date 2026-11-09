@@ -434,6 +434,12 @@ class HybridStore:
         mode: str = "hybrid",
         fusion: str | None = None,
         doc_type: str | None = None,
+        category: str | None = None,
+        source_prefix: str | None = None,
+        document_id: str | None = None,
+        source_version: str | None = None,
+        namespace: str | None = None,
+        collection: str | None = None,
         filter_: models.Filter | None = None,
     ) -> list[RetrievedChunk]:
         """
@@ -454,7 +460,7 @@ class HybridStore:
         """
         top_k = top_k or self.settings.retrieve_top_k
 
-        target_collection = self.collection
+        target_collection = collection or self.collection
         if not self.client.collection_exists(target_collection):
             if (
                 self.settings.allow_collection_fallback
@@ -491,7 +497,14 @@ class HybridStore:
         else:
             logger.info("Serving search as hybrid (dense + sparse) on collection '%s'", target_collection)
 
-        query_filter = filter_ if filter_ is not None else _doc_type_filter(doc_type)
+        query_filter = filter_ if filter_ is not None else build_filter(
+            category=category,
+            doc_type=doc_type,
+            source_prefix=source_prefix,
+            document_id=document_id,
+            source_version=source_version,
+            namespace=namespace,
+        )
 
         orig_collection = self.collection
         try:
@@ -556,42 +569,33 @@ class HybridStore:
     def _hybrid_rrf(
         self, query: str, top_k: int, query_filter: models.Filter | None
     ) -> list[RetrievedChunk]:
+        """Server-side reciprocal rank fusion - one round trip, no tunable weight.
+
+        Uses an expanded prefetch candidate pool to prevent shallow-pool truncation
+        and starvation before rank aggregation.
         """
-        Dense results 
-        Sparse results 
-        
-        RRF combines rankings.
-        
-        Benefits:
-            Fast
-            Server-side
-            No weights    
-        """
-    
-        """Server-side reciprocal rank fusion - one round trip, no tunable weight."""
-        response = self.client.query_points(
-            collection_name=self.collection,
-            prefetch=self._prefetch(query, top_k),
-            query=models.FusionQuery(fusion=models.Fusion.RRF),
-            limit=top_k,
-            query_filter=query_filter,
-            with_payload=True,
-        )
-        return [_to_retrieved(p, p.score) for p in response.points]
+        prefetch_limit = getattr(self.settings, "hybrid_prefetch_limit", None) or max(top_k * 2, top_k + 20)
+        prefetch_limit = max(prefetch_limit, top_k)
+        try:
+            response = self.client.query_points(
+                collection_name=self.collection,
+                prefetch=self._prefetch(query, prefetch_limit),
+                query=models.FusionQuery(fusion=models.Fusion.RRF),
+                limit=top_k,
+                query_filter=query_filter,
+                with_payload=True,
+            )
+            return [_to_retrieved(p, p.score) for p in response.points]
+        except Exception as e:
+            logger.warning("Server-side RRF fusion failed (%s); falling back to single branch search", e)
+            try:
+                return self._single(query, top_k, DENSE, query_filter)
+            except Exception:
+                return self._single(query, top_k, SPARSE, query_filter)
 
     def _hybrid_weighted(
         self, query: str, top_k: int, query_filter: models.Filter | None
     ) -> list[RetrievedChunk]:
-        """
-        1. Run Dense search
-        2. Run Sparse search
-        3. Normalize scores 
-        4. Apply weights 
-        5. Merge same chunk 
-        6. sort by score 
-            top chunks returned 
-        """
-        
         """Client-side fusion of min-max normalised dense and sparse scores.
 
         Slightly more work than RRF, but HYBRID_DENSE_WEIGHT becomes a real dial:
@@ -600,15 +604,38 @@ class HybridStore:
         """
         weight = self.settings.hybrid_dense_weight
         # Over-fetch each arm so the fused top_k is drawn from a wider pool.
-        pool = max(top_k * 2, top_k + 10)
-        dense_hits = self._single(query, pool, DENSE, query_filter)
-        sparse_hits = self._single(query, pool, SPARSE, query_filter)
+        pool = max(top_k * 2, top_k + 20)
+
+        dense_hits: list[RetrievedChunk] = []
+        try:
+            dense_hits = self._single(query, pool, DENSE, query_filter)
+        except Exception as e:
+            logger.warning("Dense retrieval branch failed in hybrid search: %s", e)
+
+        sparse_hits: list[RetrievedChunk] = []
+        try:
+            sparse_hits = self._single(query, pool, SPARSE, query_filter)
+        except Exception as e:
+            logger.warning("Sparse retrieval branch failed in hybrid search: %s", e)
+
+        # Dynamic branch weighting: if one branch fails or returns empty, allocate full weight
+        # to the surviving branch rather than penalizing scores by an inactive arm.
+        if dense_hits and not sparse_hits:
+            dense_weight, sparse_weight = 1.0, 0.0
+        elif sparse_hits and not dense_hits:
+            dense_weight, sparse_weight = 0.0, 1.0
+        elif not dense_hits and not sparse_hits:
+            return []
+        else:
+            dense_weight, sparse_weight = weight, 1.0 - weight
 
         merged: dict[str, RetrievedChunk] = {}
         for hits, arm_weight, is_dense in (
-            (dense_hits, weight, True),
-            (sparse_hits, 1.0 - weight, False),
+            (dense_hits, dense_weight, True),
+            (sparse_hits, sparse_weight, False),
         ):
+            if not hits or arm_weight <= 0.0:
+                continue
             normalized = normalize_scores(h.retrieval_score for h in hits)
             for score, hit in zip(normalized, hits, strict=True):
                 existing = merged.get(hit.chunk.id)
@@ -622,20 +649,100 @@ class HybridStore:
                 else:
                     existing.sparse_rank = hit.sparse_rank
 
-        ranked = sorted(merged.values(), key=lambda r: r.retrieval_score, reverse=True)
+        # Deterministic ranking: primary by fused score descending,
+        # secondary by dense rank ascending, tertiary by sparse rank ascending,
+        # quaternary by stable chunk ID ascending.
+        ranked = sorted(
+            merged.values(),
+            key=lambda r: (
+                -r.retrieval_score,
+                r.dense_rank if r.dense_rank is not None else 9999,
+                r.sparse_rank if r.sparse_rank is not None else 9999,
+                r.chunk.id,
+            ),
+        )
         return ranked[:top_k]
 
 
+def build_filter(
+    *,
+    category: str | None = None,
+    doc_type: str | None = None,
+    source_prefix: str | None = None,
+    document_id: str | None = None,
+    source_version: str | None = None,
+    namespace: str | None = None,
+    custom_filter: models.Filter | None = None,
+) -> models.Filter | None:
+    """Build a unified Qdrant metadata filter across multiple fields.
+
+    Validates and sanitizes inputs (ignoring empty or whitespace-only strings).
+    Applies consistently across dense, sparse, and hybrid retrieval.
+    If no criteria are provided, returns custom_filter or None.
+    """
+    conditions: list[Any] = []
+
+    if custom_filter is not None and custom_filter.must:
+        conditions.extend(custom_filter.must)
+
+    # Namespace alias handling: if namespace is specified, treat as category/source namespace
+    target_category = category
+    if not target_category and namespace and isinstance(namespace, str) and namespace.strip():
+        target_category = namespace.strip()
+
+    if target_category is not None and isinstance(target_category, str):
+        clean_cat = target_category.strip()
+        if clean_cat:
+            norm_cat = clean_cat.lower()
+            if norm_cat in {"kubernetes", "helm", "prometheus", "sre"}:
+                conditions.append(
+                    models.Filter(
+                        should=[
+                            models.FieldCondition(key="category", match=models.MatchValue(value=clean_cat)),
+                            models.FieldCondition(key="source", match=models.MatchPrefix(prefix=f"{norm_cat}/")),
+                            models.FieldCondition(key="category", match=models.MatchValue(value=f"runbooks/{norm_cat}")),
+                        ]
+                    )
+                )
+            else:
+                conditions.append(
+                    models.Filter(
+                        should=[
+                            models.FieldCondition(key="category", match=models.MatchValue(value=clean_cat)),
+                            models.FieldCondition(key="source", match=models.MatchPrefix(prefix=f"{clean_cat}/")),
+                        ]
+                    )
+                )
+
+    if doc_type is not None and isinstance(doc_type, str):
+        clean_dt = doc_type.strip()
+        if clean_dt:
+            conditions.append(models.FieldCondition(key="doc_type", match=models.MatchValue(value=clean_dt)))
+
+    if source_prefix is not None and isinstance(source_prefix, str):
+        clean_sp = source_prefix.strip()
+        if clean_sp:
+            conditions.append(models.FieldCondition(key="source", match=models.MatchPrefix(prefix=clean_sp)))
+
+    if document_id is not None and isinstance(document_id, str):
+        clean_did = document_id.strip()
+        if clean_did:
+            conditions.append(models.FieldCondition(key="document_id", match=models.MatchValue(value=clean_did)))
+
+    if source_version is not None and isinstance(source_version, str):
+        clean_sv = source_version.strip()
+        if clean_sv:
+            conditions.append(models.FieldCondition(key="source_version", match=models.MatchValue(value=clean_sv)))
+
+    if not conditions:
+        return custom_filter
+
+    return models.Filter(must=conditions)
+
+
 def _doc_type_filter(doc_type: str | None) -> models.Filter | None:
-    """
-    Filters documents : Based on doc type 
-    """
-    
-    if not doc_type:
-        return None
-    return models.Filter(
-        must=[models.FieldCondition(key="doc_type", match=models.MatchValue(value=doc_type))]
-    )
+    """Filters documents based on doc_type, delegating to build_filter."""
+    return build_filter(doc_type=doc_type)
 
 
 def _point_id(chunk_id: str) -> str:

@@ -141,16 +141,24 @@ class Settings(BaseSettings):
     rerank_top_n: int = 5
     hybrid_dense_weight: float = Field(0.7, ge=0.0, le=1.0)
     hybrid_fusion: Literal["weighted", "rrf"] = "rrf"
+    hybrid_prefetch_limit: int | None = Field(
+        None,
+        description="Candidate prefetch depth for server-side RRF fusion. If None, dynamically defaults to max(top_k * 2, top_k + 20).",
+    )
     enable_rerank: bool = False
     #: CRAG: below this reranker score the context is considered insufficient.
     crag_relevance_floor: float = 0.25
     #: Self-RAG: max answer regeneration attempts.
     self_rag_max_retries: int = 1
+    #: Context selection & budget
+    max_context_tokens: int = Field(2500, ge=200, le=8000, description="Max token budget for retrieved context supplied to LLM")
+    enable_context_deduplication: bool = Field(True, description="Filter redundant and highly overlapping adjacent chunks in LLM context")
+    min_context_score_ratio: float = Field(0.20, ge=0.0, le=1.0, description="Filter low-scoring noise chunks relative to top chunk score")
 
     # ---------- Feature flags ----------
     enable_hyde: bool = True
     enable_crag: bool = True
-    enable_self_rag: bool = True
+    enable_self_rag: bool = False
     enable_text2sql: bool = True
     enable_guardrails: bool = True
     #: Granular switch: enable LLM-based intent & scope verification for inbound questions.
@@ -160,6 +168,22 @@ class Settings(BaseSettings):
     #: If false, deterministic output layers (destructive command notice, secret egress redaction) remain active.
     enable_guardrails_llm_output: bool = True
     enable_cache: bool = True
+
+    # ---------- External Search Fallback (Task 49) ----------
+    #: Fall back to external web search when internal RAG context is insufficient.
+    enable_external_search: bool = False
+    #: Search provider backend: "searxng" (preferred, self-hosted) or "tavily" (optional).
+    external_search_provider: str = "searxng"
+    #: Base URL for SearXNG instance (e.g. "http://localhost:8080" or "https://searxng.internal").
+    searxng_base_url: str = ""
+    #: Request timeout in seconds for external search calls.
+    searxng_timeout_seconds: float = 5.0
+    #: Maximum external search results to consider and format into context.
+    external_search_max_results: int = 5
+    #: Optional Tavily API key for Tavily search provider.
+    tavily_api_key: str | None = None
+    #: Explicit toggle required to enable Tavily provider.
+    external_search_allow_tavily: bool = False
 
     # ---------- API ----------
     api_host: str = "127.0.0.1"

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" style="background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <style>
+    .title { font-size: 18px; font-weight: 700; fill: #f8fafc; }
+    .subtitle { font-size: 12px; fill: #94a3b8; }
+    .axis-label { font-size: 11px; fill: #94a3b8; font-weight: 500; }
+    .tick-label { font-size: 10px; fill: #64748b; }
+    .val-label { font-size: 10px; font-weight: 600; fill: #e2e8f0; }
+    .legend-text { font-size: 11px; fill: #cbd5e1; }
+    .grid-line { stroke: #334155; stroke-dasharray: 4,4; stroke-width: 1; }
+    .axis-line { stroke: #475569; stroke-width: 1.5; }
+  </style>
+  <text x="30" y="32" class="title">Pareto Trade-Off: Ranking Quality (NDCG@5) vs Mean Latency (ms)</text>
+  <text x="30" y="50" class="subtitle">Curated 50-Query SRE Golden Benchmark (sre_copilot_v1, 252 docs, 5,533 points)</text>
+  <line x1="80.0" y1="80" x2="80.0" y2="440" class="grid-line"/>
+  <text x="80.0" y="460" text-anchor="middle" class="tick-label">0ms</text>
+  <line x1="213.33333333333331" y1="80" x2="213.33333333333331" y2="440" class="grid-line"/>
+  <text x="213.33333333333331" y="460" text-anchor="middle" class="tick-label">200ms</text>
+  <line x1="346.66666666666663" y1="80" x2="346.66666666666663" y2="440" class="grid-line"/>
+  <text x="346.66666666666663" y="460" text-anchor="middle" class="tick-label">400ms</text>
+  <line x1="480.0" y1="80" x2="480.0" y2="440" class="grid-line"/>
+  <text x="480.0" y="460" text-anchor="middle" class="tick-label">600ms</text>
+  <line x1="613.3333333333333" y1="80" x2="613.3333333333333" y2="440" class="grid-line"/>
+  <text x="613.3333333333333" y="460" text-anchor="middle" class="tick-label">800ms</text>
+  <line x1="746.6666666666667" y1="80" x2="746.6666666666667" y2="440" class="grid-line"/>
+  <text x="746.6666666666667" y="460" text-anchor="middle" class="tick-label">1000ms</text>
+  <line x1="880.0" y1="80" x2="880.0" y2="440" class="grid-line"/>
+  <text x="880.0" y="460" text-anchor="middle" class="tick-label">1200ms</text>
+  <line x1="80" y1="440.0" x2="880" y2="440.0" class="grid-line"/>
+  <text x="70" y="444.0" text-anchor="end" class="tick-label">0.50</text>
+  <line x1="80" y1="349.9999999999999" x2="880" y2="349.9999999999999" class="grid-line"/>
+  <text x="70" y="353.9999999999999" text-anchor="end" class="tick-label">0.55</text>
+  <line x1="80" y1="260.0" x2="880" y2="260.0" class="grid-line"/>
+  <text x="70" y="264.0" text-anchor="end" class="tick-label">0.60</text>
+  <line x1="80" y1="169.9999999999999" x2="880" y2="169.9999999999999" class="grid-line"/>
+  <text x="70" y="173.9999999999999" text-anchor="end" class="tick-label">0.65</text>
+  <line x1="80" y1="80.0" x2="880" y2="80.0" class="grid-line"/>
+  <text x="70" y="84.0" text-anchor="end" class="tick-label">0.70</text>
+  <text x="480.0" y="485" text-anchor="middle" class="axis-label">Mean Pipeline Latency (ms) — Lower is Better →</text>
+  <text x="25" y="260.0" text-anchor="middle" transform="rotate(-90 25 260.0)" class="axis-label">NDCG@5 — Higher is Better →</text>
+  <circle cx="94.4" cy="313.6" r="12.2" fill="#38bdf8" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="94.4" y="299.6" text-anchor="middle" class="val-label" fill="#38bdf8">Dense Only (0.570, 22ms)</text>
+  <circle cx="141.6" cy="230.7" r="12.1" fill="#a855f7" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="141.6" y="248.7" text-anchor="middle" class="val-label" fill="#a855f7">Sparse Only (0.616, 92ms)</text>
+  <circle cx="159.3" cy="314.7" r="12.3" fill="#3b82f6" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="159.3" y="300.7" text-anchor="middle" class="val-label" fill="#3b82f6">Hybrid Weighted (0.570, 119ms)</text>
+  <circle cx="158.9" cy="251.2" r="12.3" fill="#10b981" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="158.9" y="269.2" text-anchor="middle" class="val-label" fill="#10b981">Hybrid RRF (Prod) (0.605, 118ms)</text>
+  <circle cx="653.0" cy="260.5" r="12.2" fill="#f59e0b" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="653.0" y="246.5" text-anchor="middle" class="val-label" fill="#f59e0b">Hybrid RRF + RR (0.600, 859ms)</text>
+  <circle cx="661.9" cy="274.6" r="12.2" fill="#ec4899" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="661.9" y="292.6" text-anchor="middle" class="val-label" fill="#ec4899">Hybrid Wtd + RR (0.592, 873ms)</text>
+  <circle cx="710.1" cy="262.0" r="12.3" fill="#6366f1" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="710.1" y="248.0" text-anchor="middle" class="val-label" fill="#6366f1">Metadata Filt (0.599, 945ms)</text>
+  <circle cx="190.5" cy="247.6" r="12.2" fill="#ef4444" fill-opacity="0.85" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="190.5" y="265.6" text-anchor="middle" class="val-label" fill="#ef4444">HyDE + RRF (0.607, 166ms)</text>
+  <line x1="80" y1="440" x2="880" y2="440" class="axis-line"/>
+  <line x1="80" y1="80" x2="80" y2="440" class="axis-line"/>
+</svg>

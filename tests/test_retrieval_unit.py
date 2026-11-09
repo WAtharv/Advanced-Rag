@@ -215,3 +215,103 @@ def test_rerank_respects_top_n_in_both_modes():
         reranker = _Reranker(is_cross_encoder, [1.0] * 6)
         result = _retriever(reranker).rerank("q", chunks, top_n=2)
         assert len(result) == 2
+
+
+# ------------------------------------------------- Stage 4A: Hybrid & Fusion Edge Cases
+
+
+def test_weighted_fusion_dynamic_weight_when_dense_empty():
+    """If dense search returns empty or fails, sparse branch gets 1.0 weight."""
+    sparse = [hit("sparse1.md", 10.0), hit("sparse2.md", 5.0)]
+    store = StubStore(Settings(hybrid_dense_weight=0.7), [], sparse)
+    ranked = store._hybrid_weighted("q", 5, None)
+
+    assert len(ranked) == 2
+    assert ranked[0].chunk.source == "sparse1.md"
+    # When sparse gets full 1.0 weight and is normalized [0, 1], top hit score is 1.0
+    assert ranked[0].retrieval_score == pytest.approx(1.0)
+    assert ranked[0].sparse_rank == 0
+    assert ranked[0].dense_rank is None
+
+
+def test_weighted_fusion_dynamic_weight_when_sparse_empty():
+    """If sparse search returns empty or fails, dense branch gets 1.0 weight."""
+    dense = [hit("dense1.md", 0.9), hit("dense2.md", 0.3)]
+    store = StubStore(Settings(hybrid_dense_weight=0.7), dense, [])
+    ranked = store._hybrid_weighted("q", 5, None)
+
+    assert len(ranked) == 2
+    assert ranked[0].chunk.source == "dense1.md"
+    assert ranked[0].retrieval_score == pytest.approx(1.0)
+    assert ranked[0].dense_rank == 0
+    assert ranked[0].sparse_rank is None
+
+
+def test_weighted_fusion_empty_both_arms():
+    """If both branches return empty, empty list is returned gracefully."""
+    store = StubStore(Settings(hybrid_dense_weight=0.7), [], [])
+    ranked = store._hybrid_weighted("q", 5, None)
+    assert ranked == []
+
+
+def test_weighted_fusion_deterministic_tie_breaking():
+    """When scores are identical, dense_rank, then sparse_rank, then chunk_id break ties."""
+    # Chunk A: in dense at rank 0, Chunk B: in dense at rank 1. Identical scores.
+    c_a = RetrievedChunk(
+        chunk=Chunk(id="chunk_a", text="A", source="a.md", section="S1"),
+        retrieval_score=1.0,
+        dense_rank=0,
+    )
+    c_b = RetrievedChunk(
+        chunk=Chunk(id="chunk_b", text="B", source="b.md", section="S2"),
+        retrieval_score=1.0,
+        dense_rank=1,
+    )
+
+    store = StubStore(Settings(hybrid_dense_weight=1.0), [c_b, c_a], [])
+    # In _single, c_b gets rank 0, c_a gets rank 1
+    # Let's test with custom stub to simulate equal fused scores:
+    class EqualScoreStub(StubStore):
+        def _single(self, query, top_k, using, query_filter):
+            return [
+                RetrievedChunk(
+                    chunk=Chunk(id="chunk_b", text="B", source="b.md", section="S2"),
+                    retrieval_score=0.8,
+                    dense_rank=1,
+                ),
+                RetrievedChunk(
+                    chunk=Chunk(id="chunk_a", text="A", source="a.md", section="S1"),
+                    retrieval_score=0.8,
+                    dense_rank=0,
+                ),
+            ]
+
+    eq_store = EqualScoreStub(Settings(hybrid_dense_weight=1.0), [], [])
+    ranked = eq_store._hybrid_weighted("q", 2, None)
+    # chunk_a should be first because its dense_rank (0) < dense_rank (1)
+    assert ranked[0].chunk.id == "chunk_a"
+    assert ranked[1].chunk.id == "chunk_b"
+
+
+def test_hybrid_metadata_preservation():
+    """Chunk metadata (title, section, source, id) is preserved through fusion."""
+    chunk = Chunk(
+        id="k8s/trouble#123",
+        text="Check container status",
+        source="kubernetes/trouble.md",
+        title="Troubleshooting Pods",
+        section="Exit Codes",
+        metadata={"category": "kubernetes", "code": 137},
+    )
+    dense = [RetrievedChunk(chunk=chunk, retrieval_score=0.85)]
+    store = StubStore(Settings(hybrid_dense_weight=0.7), dense, [])
+    ranked = store._hybrid_weighted("q", 1, None)
+
+    assert len(ranked) == 1
+    res = ranked[0]
+    assert res.chunk.id == "k8s/trouble#123"
+    assert res.chunk.title == "Troubleshooting Pods"
+    assert res.chunk.section == "Exit Codes"
+    assert res.chunk.source == "kubernetes/trouble.md"
+    assert res.chunk.metadata["category"] == "kubernetes"
+

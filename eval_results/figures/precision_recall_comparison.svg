@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480" style="background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <style>
+    .title { font-size: 18px; font-weight: 700; fill: #f8fafc; }
+    .subtitle { font-size: 12px; fill: #94a3b8; }
+    .axis-label { font-size: 11px; fill: #94a3b8; font-weight: 500; }
+    .tick-label { font-size: 10px; fill: #64748b; }
+    .val-label { font-size: 10px; font-weight: 600; fill: #e2e8f0; }
+    .legend-text { font-size: 11px; fill: #cbd5e1; }
+    .grid-line { stroke: #334155; stroke-dasharray: 4,4; stroke-width: 1; }
+    .axis-line { stroke: #475569; stroke-width: 1.5; }
+  </style>
+  <text x="30" y="32" class="title">Retrieval Coverage & Density: Precision@5 vs Recall@5</text>
+  <text x="30" y="50" class="subtitle">Curated 50-Query SRE Golden Benchmark (sre_copilot_v1, 252 docs, 5,533 points)</text>
+
+  <g transform="translate(680, 25)">
+    <rect x="0" y="0" width="14" height="14" rx="3" fill="#6366f1"/>
+    <text x="20" y="11" class="legend-text">Precision@5</text>
+    <rect x="120" y="0" width="14" height="14" rx="3" fill="#14b8a6"/>
+    <text x="140" y="11" class="legend-text">Recall@5</text>
+  </g>
+  <line x1="60" y1="400.0" x2="920" y2="400.0" class="grid-line"/>
+  <text x="50" y="404.0" text-anchor="end" class="tick-label">0.0</text>
+  <line x1="60" y1="336.0" x2="920" y2="336.0" class="grid-line"/>
+  <text x="50" y="340.0" text-anchor="end" class="tick-label">0.2</text>
+  <line x1="60" y1="272.0" x2="920" y2="272.0" class="grid-line"/>
+  <text x="50" y="276.0" text-anchor="end" class="tick-label">0.4</text>
+  <line x1="60" y1="208.0" x2="920" y2="208.0" class="grid-line"/>
+  <text x="50" y="212.0" text-anchor="end" class="tick-label">0.6</text>
+  <line x1="60" y1="144.0" x2="920" y2="144.0" class="grid-line"/>
+  <text x="50" y="148.0" text-anchor="end" class="tick-label">0.8</text>
+  <line x1="60" y1="80.0" x2="920" y2="80.0" class="grid-line"/>
+  <text x="50" y="84.0" text-anchor="end" class="tick-label">1.0</text>
+  <rect x="84.8" y="316.8" width="26" height="83.2" rx="3" fill="#6366f1"/>
+  <text x="97.8" y="311.8" text-anchor="middle" class="val-label">0.26</text>
+  <rect x="116.8" y="212.3" width="26" height="187.7" rx="3" fill="#14b8a6"/>
+  <text x="129.8" y="207.3" text-anchor="middle" class="val-label">0.59</text>
+  <text x="113.8" y="425" text-anchor="middle" class="axis-label">Dense Only</text>
+  <rect x="192.2" y="311.7" width="26" height="88.3" rx="3" fill="#6366f1"/>
+  <text x="205.2" y="306.7" text-anchor="middle" class="val-label">0.28</text>
+  <rect x="224.2" y="200.5" width="26" height="199.5" rx="3" fill="#14b8a6"/>
+  <text x="237.2" y="195.5" text-anchor="middle" class="val-label">0.62</text>
+  <text x="221.2" y="425" text-anchor="middle" class="axis-label">Sparse Only</text>
+  <rect x="299.8" y="319.4" width="26" height="80.6" rx="3" fill="#6366f1"/>
+  <text x="312.8" y="314.4" text-anchor="middle" class="val-label">0.25</text>
+  <rect x="331.8" y="218.7" width="26" height="181.3" rx="3" fill="#14b8a6"/>
+  <text x="344.8" y="213.7" text-anchor="middle" class="val-label">0.57</text>
+  <text x="328.8" y="425" text-anchor="middle" class="axis-label">Hybrid Weighted</text>
+  <rect x="407.2" y="314.2" width="26" height="85.8" rx="3" fill="#6366f1"/>
+  <text x="420.2" y="309.2" text-anchor="middle" class="val-label">0.27</text>
+  <rect x="439.2" y="206.9" width="26" height="193.1" rx="3" fill="#14b8a6"/>
+  <text x="452.2" y="201.9" text-anchor="middle" class="val-label">0.60</text>
+  <text x="436.2" y="425" text-anchor="middle" class="axis-label">Hybrid RRF</text>
+  <rect x="514.8" y="314.2" width="26" height="85.8" rx="3" fill="#6366f1"/>
+  <text x="527.8" y="309.2" text-anchor="middle" class="val-label">0.27</text>
+  <rect x="546.8" y="203.7" width="26" height="196.3" rx="3" fill="#14b8a6"/>
+  <text x="559.8" y="198.7" text-anchor="middle" class="val-label">0.61</text>
+  <text x="543.8" y="425" text-anchor="middle" class="axis-label">Hybrid RRF + RR</text>
+  <rect x="622.2" y="315.5" width="26" height="84.5" rx="3" fill="#6366f1"/>
+  <text x="635.2" y="310.5" text-anchor="middle" class="val-label">0.26</text>
+  <rect x="654.2" y="209.1" width="26" height="190.9" rx="3" fill="#14b8a6"/>
+  <text x="667.2" y="204.1" text-anchor="middle" class="val-label">0.60</text>
+  <text x="651.2" y="425" text-anchor="middle" class="axis-label">Hybrid Wtd + RR</text>
+  <rect x="729.8" y="315.5" width="26" height="84.5" rx="3" fill="#6366f1"/>
+  <text x="742.8" y="310.5" text-anchor="middle" class="val-label">0.26</text>
+  <rect x="761.8" y="206.9" width="26" height="193.1" rx="3" fill="#14b8a6"/>
+  <text x="774.8" y="201.9" text-anchor="middle" class="val-label">0.60</text>
+  <text x="758.8" y="425" text-anchor="middle" class="axis-label">Metadata Filt</text>
+  <rect x="837.2" y="314.2" width="26" height="85.8" rx="3" fill="#6366f1"/>
+  <text x="850.2" y="309.2" text-anchor="middle" class="val-label">0.27</text>
+  <rect x="869.2" y="204.8" width="26" height="195.2" rx="3" fill="#14b8a6"/>
+  <text x="882.2" y="199.8" text-anchor="middle" class="val-label">0.61</text>
+  <text x="866.2" y="425" text-anchor="middle" class="axis-label">HyDE + RRF</text>
+  <line x1="60" y1="400" x2="920" y2="400" class="axis-line"/>
+</svg>

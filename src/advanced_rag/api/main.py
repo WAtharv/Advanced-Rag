@@ -60,6 +60,13 @@ class RetrieveRequest(BaseModel):
     fusion: str = Field("rrf", pattern="^(weighted|rrf)$")
     use_hyde: bool = False
     rerank: bool = False
+    category: str | None = None
+    doc_type: str | None = None
+    source_prefix: str | None = None
+    document_id: str | None = None
+    source_version: str | None = None
+    namespace: str | None = None
+    collection: str | None = None
 
     @field_validator("query")
     @classmethod
@@ -192,11 +199,19 @@ def retrieve(request: RetrieveRequest) -> dict[str, Any]:
         fusion=request.fusion,
         top_k=candidate_count,
         top_n=output_count,
+        category=request.category,
+        doc_type=request.doc_type,
+        source_prefix=request.source_prefix,
+        document_id=request.document_id,
+        source_version=request.source_version,
+        namespace=request.namespace,
+        collection=request.collection,
     )
     return {
         "query": request.query,
         "mode": request.mode,
         "fusion": request.fusion if request.mode == "hybrid" else None,
+        "category": request.category,
         "candidate_count": candidate_count,
         "result_count": len(result.chunks),
         "hyde_document": result.hyde_document,

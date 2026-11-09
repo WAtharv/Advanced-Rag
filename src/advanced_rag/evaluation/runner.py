@@ -34,7 +34,7 @@ STRATEGIES: list[tuple[str, dict]] = [
     ("dense only", {"mode": "dense", "rerank": False, "use_hyde": False}),
     ("sparse only (BM25)", {"mode": "sparse", "rerank": False, "use_hyde": False}),
     ("hybrid (RRF)", {"mode": "hybrid", "fusion": "rrf", "rerank": False, "use_hyde": False}),
-    ("hybrid (weighted)", {"mode": "hybrid", "rerank": False, "use_hyde": False}),
+    ("hybrid (weighted)", {"mode": "hybrid", "fusion": "weighted", "rerank": False, "use_hyde": False}),
     ("hybrid + rerank", {"mode": "hybrid", "rerank": True, "use_hyde": False}),
     ("hybrid + rerank + HyDE", {"mode": "hybrid", "rerank": True, "use_hyde": True}),
 ]

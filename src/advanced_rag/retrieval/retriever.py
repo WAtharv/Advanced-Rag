@@ -22,6 +22,7 @@ points to compare strategies without generating anything."""
 from __future__ import annotations
 
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 
@@ -135,6 +136,12 @@ class Retriever:
         top_k: int | None = None,
         top_n: int | None = None,
         doc_type: str | None = None,
+        category: str | None = None,
+        source_prefix: str | None = None,
+        document_id: str | None = None,
+        source_version: str | None = None,
+        namespace: str | None = None,
+        collection: str | None = None,
         filter_=None,
     ) -> RetrievalResult:
         t0 = time.perf_counter()
@@ -149,14 +156,24 @@ class Retriever:
             t_hyde = time.perf_counter()
             hyde_doc = self.generate_hyde(question)
             hyde_ms = round((time.perf_counter() - t_hyde) * 1000.0, 2)
-            if hyde_doc:
+            if hyde_doc and hyde_doc.strip():
                 # Keep the question in the query so lexical matching still has the
                 # user's exact error strings and resource names to work with.
-                query = question + "\n\n" + hyde_doc
+                query = question + "\n\n" + hyde_doc.strip()
 
         chunks = self.store.search(
-            query, top_k=top_k or self.settings.retrieve_top_k, mode=mode,
-            fusion=effective_fusion, doc_type=doc_type, filter_=filter_,
+            query,
+            top_k=top_k or self.settings.retrieve_top_k,
+            mode=mode,
+            fusion=effective_fusion,
+            doc_type=doc_type,
+            category=category,
+            source_prefix=source_prefix,
+            document_id=document_id,
+            source_version=source_version,
+            namespace=namespace,
+            collection=collection,
+            filter_=filter_,
         )
         for rank, chunk in enumerate(chunks, start=1):
             chunk.retrieval_rank = rank
@@ -171,7 +188,10 @@ class Retriever:
             chunks = self.rerank(question, chunks, top_n=top_n)
             rerank_ms = round((time.perf_counter() - t_rerank) * 1000.0, 2)
             reranked = True
-            cross_encoder = self.reranker.is_cross_encoder
+            try:
+                cross_encoder = bool(self.reranker.is_cross_encoder)
+            except Exception:
+                cross_encoder = False
 
         total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         return RetrievalResult(
@@ -227,36 +247,42 @@ class Retriever:
         separately; the cross-encoder reads them together, which is what makes it
         worth the extra pass over a small candidate set.
         """
+        if not chunks:
+            return []
         top_n = top_n or self.settings.rerank_top_n
-        reranker = self.reranker
-        raw = reranker.score(question, [c.chunk.text for c in chunks])              # Returns: Logits [4.2, 1.5, 5.8]
-        for chunk, logit in zip(chunks, raw, strict=True):
-            # Squash to 0..1 so CRAG_RELEVANCE_FLOOR means something stable.
-            chunk.rerank_score = sigmoid(logit)                                     # Convert to Probability : 5.8 -> 0.997
-            chunk.rerank_is_authoritative = reranker.is_cross_encoder
+        try:
+            reranker = self.reranker
+            raw = reranker.score(question, [c.chunk.text for c in chunks])              # Returns: Logits [4.2, 1.5, 5.8]
+            for chunk, logit in zip(chunks, raw, strict=True):
+                # Squash to 0..1 so CRAG_RELEVANCE_FLOOR means something stable.
+                chunk.rerank_score = sigmoid(logit)                                     # Convert to Probability : 5.8 -> 0.997
+                chunk.rerank_is_authoritative = reranker.is_cross_encoder
 
-        if not reranker.is_cross_encoder:                                           # Do: keep the original order 
-                                                                                    # Reason:
-                                                                                    # Measured performance was worse when reordered.
-                                                                                    # Only score is used.
-                                                                                    
-                                                                                    # sort : rerank_score + retrieval_score -> best documents first 
-            # Measured: reordering by the lexical stand-in *lowered* precision@5
-            # from 0.76 to 0.64 on the golden set. It is too weak a signal to
-            # overrule fusion, so it only supplies a score for the CRAG floor and
-            # the retrieval order is preserved.
+            if not reranker.is_cross_encoder:                                           # Do: keep the original order 
+                # Measured: reordering by the lexical stand-in *lowered* precision@5
+                # from 0.76 to 0.64 on the golden set. It is too weak a signal to
+                # overrule fusion, so it only supplies a score for the CRAG floor and
+                # the retrieval order is preserved.
+                return chunks[:top_n]
+
+            # Retrieval score is the tiebreaker: where the reranker cannot separate two
+            # passages, fall back on the order the retriever already earned instead of
+            # letting an arbitrary tie decide.
+            return sorted(
+                chunks,
+                key=lambda c: (c.rerank_score or 0.0, c.retrieval_score),
+                reverse=True,
+            )[:top_n]
+        except Exception as exc:
+            log_degraded(
+                logger,
+                "rerank",
+                "CrossEncoder reranking failed; falling back to original retrieval ranking",
+                exc,
+            )
             return chunks[:top_n]
 
-        # Retrieval score is the tiebreaker: where the reranker cannot separate two
-        # passages, fall back on the order the retriever already earned instead of
-        # letting an arbitrary tie decide.
-        return sorted(
-            chunks,
-            key=lambda c: (c.rerank_score or 0.0, c.retrieval_score),
-            reverse=True,
-        )[:top_n]
-
-    def generate_hyde(self, question: str) -> str | None:
+    def generate_hyde(self, question: str, *, model: str | None = None) -> str | None:
         """
         Question
             ↓
@@ -271,22 +297,25 @@ class Retriever:
         much surface form with the runbook that answers it. Embedding a fake
         answer closes that gap.
         """
+        if not question or not isinstance(question, str) or len(question.strip()) < 3:
+            return None
         if not llm_available():
             return None
+        target_model = model or self.settings.llm_fast_model
         try:
             result = self.llm.complete(
-                "Kubernetes question: " + question,
+                "Kubernetes question: " + question.strip(),
                 system=prompts.HYDE_SYSTEM,
-                model=self.settings.llm_fast_model,
+                model=target_model,
                 effort="low",
-                max_tokens=600,
+                max_tokens=250,
             )
         except Exception as exc:  # HyDE is an optimisation - never fail the request for it
             log_degraded(logger, "hyde", "HyDE unavailable, using the raw question", exc)
             return None
-        if result.refused or not result.text:
+        if result.refused or not result.text or not result.text.strip():
             return None
-        return result.text
+        return result.text.strip()
 
     def rewrite_query(self, question: str, *, n: int = 3) -> list[str]:                # (Corrective RAG)
         """CRAG's corrective step: propose alternative queries after a bad pass."""
@@ -341,6 +370,78 @@ class Retriever:
         if not pooled:
             return []
         return self.rerank(question or queries[0], list(pooled.values()), top_n=top_n)
+
+
+def select_context_chunks(
+    chunks: list[RetrievedChunk],
+    *,
+    max_chunks: int = 5,
+    max_tokens: int = 2500,
+    min_score_ratio: float = 0.20,
+    enable_deduplication: bool = True,
+) -> list[RetrievedChunk]:
+    """Filter, deduplicate, and budget retrieved chunks for LLM context.
+
+    1. Relevance thresholding: drop chunks scoring below (top_score * min_score_ratio).
+       Always preserves at least 1 chunk if candidates are provided.
+    2. Near-duplicate / sliding-window deduplication: drop overlapping chunks from
+       the same source document whose token Jaccard similarity exceeds 0.75.
+    3. Token budget enforcement: cumulative token limit (max_tokens) using len(text)//4
+       heuristic, stopping when budget is exhausted (always keeping >= 1 chunk).
+    4. Bounded to at most max_chunks.
+    """
+    if not chunks:
+        return []
+
+    # 1. Relevance thresholding
+    top_score = max((c.score for c in chunks), default=0.0)
+    if top_score > 0.0 and min_score_ratio > 0.0:
+        threshold = top_score * min_score_ratio
+        filtered = [c for c in chunks if c.score >= threshold]
+        if not filtered:
+            filtered = [chunks[0]]
+    else:
+        filtered = list(chunks)
+
+    # 2. Near-duplicate / sliding-window deduplication
+    deduped: list[RetrievedChunk] = []
+    for candidate in filtered:
+        if not enable_deduplication:
+            deduped.append(candidate)
+            continue
+
+        cand_words = set(re.findall(r"\w+", candidate.chunk.text.lower()))
+        is_duplicate = False
+        for accepted in deduped:
+            if candidate.chunk.source and accepted.chunk.source == candidate.chunk.source:
+                acc_words = set(re.findall(r"\w+", accepted.chunk.text.lower()))
+                union = len(cand_words | acc_words)
+                if union > 0:
+                    jaccard = len(cand_words & acc_words) / union
+                    if jaccard > 0.75:
+                        is_duplicate = True
+                        break
+        if not is_duplicate:
+            deduped.append(candidate)
+
+    if not deduped:
+        deduped = [chunks[0]]
+
+    # 3. Token budgeting and chunk count capping
+    selected: list[RetrievedChunk] = []
+    used_tokens = 0
+
+    for chunk in deduped:
+        if len(selected) >= max_chunks:
+            break
+        # Heuristic: 1 token ~= 4 chars (min 1 token)
+        chunk_tokens = max(1, len(chunk.chunk.text) // 4)
+        if selected and (used_tokens + chunk_tokens > max_tokens):
+            break
+        selected.append(chunk)
+        used_tokens += chunk_tokens
+
+    return selected or [chunks[0]]
 
 
 def format_context(chunks: list[RetrievedChunk]) -> str:            # Converts retrieved chunks into prompt context.

@@ -139,12 +139,25 @@
   function citations(list) {
     if (!list || !list.length) return safe("");
     var rows = list.map(function (citation, index) {
+      var isExternal = citation.source_type === "external" || Boolean(citation.url);
       var where = citation.title || citation.source;
+      var titleHtml;
+      if (isExternal && citation.url) {
+        titleHtml = html`<a href="${citation.url}" target="_blank" rel="noopener noreferrer" class="external-link">[${index + 1}] ${where} ↗</a>`;
+      } else {
+        titleHtml = html`[${index + 1}] ${where}`;
+      }
       var section = citation.section ? html` <span class="v">› ${citation.section}</span>` : "";
+      var badge = isExternal
+        ? html` <span class="usa-tag usa-tag--info" style="font-size: 0.75rem; padding: 2px 6px;">${citation.provider || "web"}: ${citation.source_domain || "external"}</span>`
+        : "";
+      var sourceLine = isExternal && citation.url
+        ? html`<span class="v"><code>${citation.url}</code>${badge}</span>`
+        : html`<span class="v"><code>${citation.source}</code> · score ${citation.score.toFixed(3)}</span>`;
+
       return html`<div class="row-line">
-        <span class="k">[${index + 1}] ${where}</span>${section}<br>
-        <span class="v"><code>${citation.source}</code> · score
-        ${citation.score.toFixed(3)}</span>
+        <span class="k">${titleHtml}</span>${section}<br>
+        ${sourceLine}
       </div>`;
     });
     return expander(html`Sources (${list.length})`, html`<div class="rows">${rows}</div>`);
@@ -273,6 +286,11 @@
     if (payload.cached) {
       pills.push(
         html`<span class="usa-tag usa-tag--success">cache hit (${payload.cache_kind})</span>`
+      );
+    }
+    if (payload.external_search_used) {
+      pills.push(
+        html`<span class="usa-tag usa-tag--info">🌐 external (${payload.external_search_provider || "web"}) · ${payload.external_sources_count || 0} sources</span>`
       );
     }
 
@@ -568,6 +586,9 @@
     var candidateCount = result.candidate_count !== undefined ? result.candidate_count : result.results.length;
     var displayedCount = result.result_count !== undefined ? result.result_count : result.results.length;
     var modeBadge = fusion ? `${mode} (${fusion})` : mode;
+    var categoryBadge = result.category
+      ? html`<span class="usa-tag" style="background: var(--accent-light, #e0f2fe); color: var(--accent-dark, #0369a1);">Category: ${result.category}</span>`
+      : "";
 
     parts.push(
       html`<div class="lab-summary">
@@ -575,6 +596,7 @@
         <code>${authoritative ? "rerank" : "retrieval"}</code> score</p>
         <p class="muted" style="margin-top: 6px; font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 8px;">
           <span class="usa-tag usa-tag--info">Mode: ${modeBadge}</span>
+          ${categoryBadge}
           <span class="usa-tag">Total: ${totalLatency}</span>
           <span class="usa-tag">HyDE: ${hydeLatency}</span>
           <span class="usa-tag">Rerank: ${rerankLatency}</span>
@@ -605,6 +627,7 @@
   function runLab(event) {
     event.preventDefault();
     var mode = $("lab-mode").value;
+    var cat = $("lab-category") ? $("lab-category").value : "";
     var payload = {
       query: $("lab-query").value,
       mode: mode,
@@ -613,6 +636,9 @@
       rerank: $("lab-rerank").checked,
       top_k: Number($("lab-topk").value),
     };
+    if (cat) {
+      payload.category = cat;
+    }
     if (!payload.query.trim()) return;
 
     show($("lab-error"), false);

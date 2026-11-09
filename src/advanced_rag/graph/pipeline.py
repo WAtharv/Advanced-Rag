@@ -119,4 +119,8 @@ def _to_response(
         input_tokens=int(result.get("input_tokens", 0)),
         output_tokens=int(result.get("output_tokens", 0)),
         latency_ms=int((time.perf_counter() - started) * 1000),
+        external_search_used=bool(result.get("external_search_used")),
+        external_search_provider=str(result.get("external_search_provider") or ""),
+        external_sources_count=int(result.get("external_sources_count", 0)),
+        external_search_latency_ms=float(result.get("external_search_latency_ms", 0.0)),
     )

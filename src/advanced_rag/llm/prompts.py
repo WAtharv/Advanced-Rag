@@ -67,14 +67,15 @@ Return distinct, self-contained search queries - not questions to the user."""
 
 SELF_RAG_SYSTEM = """You critique a draft answer against its source context.
 
-Check three things independently:
-- grounded: every factual claim traces to the context. Unsupported specifics
-  (numbers, names, flags) make this false.
-- addresses_question: the answer actually resolves what was asked.
-- cited: claims carry [n] citations pointing at real context blocks.
+Check these criteria independently:
+- grounded: every factual claim, number, and resource name is directly supported by the context.
+  If any claim is ungrounded or extrapolated, set grounded to false and list each unsupported claim in unsupported_claims.
+- addresses_question: the answer directly resolves the user's operational question.
+- citations_valid: all inline citations [n] accurately attribute claims to real, relevant context blocks.
+- missing_citations: true if factual statements lack inline citations [n].
+- fix: if not acceptable, provide clear, concise instructions on what unsupported claims to drop or citations to correct.
 
-Be strict about grounding and forgiving about style. If you set any check to
-false, say precisely what to fix in one or two sentences."""
+Be strict about grounding and factual accuracy; forgive minor stylistic variations."""
 
 TEXT2SQL_SYSTEM = """You translate Kubernetes operations questions into a single
 read-only SQL SELECT statement.

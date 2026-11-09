@@ -416,6 +416,8 @@ body {
 .usa-tag--success { background: var(--success-lighter); color: var(--success-ink); }
 .usa-tag--warning { background: var(--warning-lighter); color: var(--warning-ink); }
 .usa-tag--error { background: var(--error-lighter); color: var(--error-dark); }
+.external-link { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.external-link:hover { color: var(--primary-dark); }
 
 /* ---------------------------------------------------------------- prose */
 

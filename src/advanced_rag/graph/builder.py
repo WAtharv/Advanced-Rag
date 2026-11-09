@@ -70,15 +70,28 @@ def after_sql_execute(state: RagState) -> Literal["retrieve", "generate"]:
     return "retrieve" if state.get("route") is Route.BOTH else "generate"
 
 
-def after_grade(state: RagState) -> Literal["generate", "rewrite_query"]:
+def after_grade(state: RagState) -> Literal["generate", "rewrite_query", "external_search"]:
+    settings = get_settings()
     verdict = state.get("verdict", Verdict.CORRECT)
     if verdict is Verdict.CORRECT:
         return "generate"
-    if state.get("retrieval_attempts", 0) >= MAX_RETRIEVAL_ATTEMPTS:
-        # Out of corrective budget - answer from what we have and say it is thin.
-        logger.info("Retrieval attempts exhausted; generating with a %s verdict", verdict.value)
-        return "generate"
-    return "rewrite_query"
+    if state.get("retrieval_attempts", 0) < MAX_RETRIEVAL_ATTEMPTS:
+        return "rewrite_query"
+    # Internal retrieval attempts exhausted. Check external search fallback.
+    if (
+        settings.enable_external_search
+        and not state.get("force_extractive")
+        and not nodes._extractive_mode(state)
+        and state.get("external_search_attempts", 0) < 1
+    ):
+        logger.info(
+            "Retrieval attempts exhausted with verdict %s; routing to external search fallback",
+            verdict.value,
+        )
+        return "external_search"
+    # Out of corrective budget and no external search - answer from what we have and say it is thin.
+    logger.info("Retrieval attempts exhausted; generating with a %s verdict", verdict.value)
+    return "generate"
 
 
 def after_critique(state: RagState) -> Literal["generate", "guardrail_output"]:
@@ -152,11 +165,14 @@ def build_graph(settings: Settings | None = None, *, checkpointer=None):
         graph.add_node("grade_context", nodes.grade_node)
         graph.add_node("rewrite_query", nodes.rewrite_node)
         graph.add_edge("retrieve", "grade_context")
-        graph.add_conditional_edges(
-            "grade_context",
-            after_grade,
-            {"generate": "generate", "rewrite_query": "rewrite_query"},
-        )
+
+        edges: dict[str, str] = {"generate": "generate", "rewrite_query": "rewrite_query"}
+        if settings.enable_external_search:
+            graph.add_node("external_search", nodes.external_search_node)
+            graph.add_edge("external_search", "generate")
+            edges["external_search"] = "external_search"
+
+        graph.add_conditional_edges("grade_context", after_grade, edges)
         # A rewrite loops back through retrieval, which re-grades on the way out.
         graph.add_edge("rewrite_query", "retrieve")
     else:

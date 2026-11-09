@@ -57,9 +57,18 @@ class RagState(TypedDict, total=False):
     verdict_reason: str
     rewrites: list[str]
 
+    # ---- External Search Fallback
+    external_search_used: bool
+    external_search_provider: str
+    external_sources_count: int
+    external_search_latency_ms: float
+    external_search_attempts: int
+
     # ---- generation and Self-RAG
     answer: str
     critique: str
+    grounded: bool | None
+    unsupported_claims: list[str]
     self_rag_attempts: int
     #: Set when generation failed for an infrastructure reason (no credentials,
     #: network, rate limit). Such an answer must never be cached - otherwise a
@@ -102,8 +111,15 @@ def initial_state(question: str, *, force_extractive: bool = False) -> RagState:
         verdict=Verdict.AMBIGUOUS,
         verdict_reason="",
         rewrites=[],
+        external_search_used=False,
+        external_search_provider="",
+        external_sources_count=0,
+        external_search_latency_ms=0.0,
+        external_search_attempts=0,
         answer="",
         critique="",
+        grounded=None,
+        unsupported_claims=[],
         self_rag_attempts=0,
         generation_failed=False,
         extractive=False,
