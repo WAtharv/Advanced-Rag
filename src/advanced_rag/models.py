@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal
@@ -130,6 +131,18 @@ class Citation(BaseModel):                              # Stores source referenc
     source_domain: str | None = None                    # Source domain for web citations
 
 
+class ApprovalStatus(StrEnum):
+    """Lifecycle states for human approval of generated SQL."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+    EXECUTING = "executing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class SqlProposal(BaseModel):                           # Represents AI-generated SQL waiting for approval.
     """A generated query awaiting human approval."""
 
@@ -138,11 +151,35 @@ class SqlProposal(BaseModel):                           # Represents AI-generate
     tables: list[str] = Field(default_factory=list)
     read_only: bool = True
     approved: bool = False
+
+    # Task 61 lifecycle, hash binding & audit metadata
+    proposal_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    sql_hash: str = ""
+    status: ApprovalStatus = ApprovalStatus.PENDING
+    requested_at: str = ""
+    expires_at: str = ""
+    decided_at: str | None = None
+    actor: str | None = None
+    rejection_reason: str | None = None
+    execution_started_at: str | None = None
+    execution_completed_at: str | None = None
+
     #: Populated once executed.
     columns: list[str] = Field(default_factory=list)
     rows: list[list[Any]] = Field(default_factory=list)
     row_count: int = 0
     error: str | None = None
+
+    # Task 62 structured result formatting, pagination & performance metrics
+    column_types: dict[str, str] = Field(default_factory=dict)
+    truncated: bool = False
+    truncation_reason: str | None = None
+    page: int = 1
+    page_size: int = 50
+    total_rows: int | None = None
+    has_more: bool = False
+    execution_duration_ms: float = 0.0
+    summary: str = ""
 
 """
 User Question ↓ Generate SQL ↓ Human Approval ↓ Execute ↓ Store Results

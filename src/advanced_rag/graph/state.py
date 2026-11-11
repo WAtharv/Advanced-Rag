@@ -88,15 +88,19 @@ class RagState(TypedDict, total=False):
     awaiting_approval: bool
 
     # ---- bookkeeping
+    thread_id: str
     trace: Annotated[list[TraceStep], operator.add]
     input_tokens: int
     output_tokens: int
 
 
-def initial_state(question: str, *, force_extractive: bool = False) -> RagState:
+def initial_state(
+    question: str, *, force_extractive: bool = False, thread_id: str = ""
+) -> RagState:
     return RagState(
         question=question,
         original_question=question,
+        thread_id=thread_id,
         force_extractive=force_extractive,
         guardrails=[],
         blocked=False,

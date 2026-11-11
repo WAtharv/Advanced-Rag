@@ -39,8 +39,11 @@ from __future__ import annotations
 
 import logging
 import re
+import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.types import interrupt
 from pydantic import BaseModel, Field, field_validator
 
@@ -51,7 +54,7 @@ from advanced_rag.guardrails import get_guardrails
 from advanced_rag.llm import prompts
 from advanced_rag.llm.client import get_llm, llm_available
 from advanced_rag.llm.extractive import extractive_answer
-from advanced_rag.models import Citation, RetrievedChunk, Route, TraceStep, Verdict
+from advanced_rag.models import ApprovalStatus, Citation, RetrievedChunk, Route, TraceStep, Verdict
 from advanced_rag.observability import timed
 from advanced_rag.retrieval import (
     format_context,
@@ -65,6 +68,7 @@ from advanced_rag.retrieval.external import (
     validate_and_filter_results,
 )
 from advanced_rag.text2sql import executor
+from advanced_rag.text2sql.audit import get_audit_store
 from advanced_rag.text2sql.generator import get_sql_generator
 
 logger = logging.getLogger(__name__)
@@ -750,74 +754,412 @@ def critique_node(state: RagState) -> dict:                        # Self-RAG ve
 
 
 def sql_generate_node(state: RagState) -> dict:                    # Convert question to SQL.
-    """Draft a read-only query. Nothing runs yet."""               # 
+    """Draft a read-only query and bind hash, ID, and expiry. Nothing runs yet."""
+    settings = get_settings()
     trace: list = []
     with timed(trace, "sql_generate") as step:
         proposal = get_sql_generator().generate(state["question"])
+        if proposal.sql:
+            sql_hash = executor.compute_sql_hash(proposal.sql)
+            now_utc = datetime.now(timezone.utc)
+            expiry_seconds = getattr(settings, "approval_expiry_seconds", 300)
+            expires_at = (now_utc + timedelta(seconds=expiry_seconds)).isoformat()
+            proposal_id = getattr(proposal, "proposal_id", None) or uuid.uuid4().hex
+            proposal = proposal.model_copy(
+                update={
+                    "proposal_id": proposal_id,
+                    "sql_hash": sql_hash,
+                    "status": ApprovalStatus.PENDING,
+                    "requested_at": now_utc.isoformat(),
+                    "expires_at": expires_at,
+                }
+            )
+            # Record in audit store
+            thread_id = state.get("thread_id") or state.get("original_question", "")
+            get_audit_store().record_proposal(proposal, thread_id=thread_id)
+
         step.detail = proposal.error or f"proposed a query over {', '.join(proposal.tables)}"
     return {"sql": proposal, "trace": trace}
 
 
 def sql_approval_node(state: RagState) -> dict:                     # Human-in-the-loop approval.
-    """Pause the graph and hand the query to a human.               # Approve / Reject
-                                                                    # Protects databases.
+    """Pause the graph and hand the query to a human with full proposal context.
+
     `interrupt()` persists the state through the checkpointer and raises out of
-    the run. Resuming with Command(resume={"approved": bool}) continues from
-    exactly here, so no earlier work is repeated.
+    the run. Resuming with Command(resume={"approved": bool, ...}) continues from
+    exactly here, verifying SQL hash integrity, expiration, and replay prevention.
     """
+    settings = get_settings()
     proposal = state.get("sql")
     if proposal is None or not proposal.sql:
         return {"awaiting_approval": False}
 
-    decision = interrupt(                                           # interrupt 
+    decision = interrupt(
         {
             "type": "sql_approval",
+            "proposal_id": proposal.proposal_id,
+            "sql_hash": proposal.sql_hash,
             "question": state["original_question"],
             "sql": proposal.sql,
             "rationale": proposal.rationale,
             "tables": proposal.tables,
+            "dialect": settings.sql_dialect,
+            "requested_at": proposal.requested_at,
+            "expires_at": proposal.expires_at,
         }
     )
-    approved = bool(decision.get("approved")) if isinstance(decision, dict) else bool(decision)
-    updated = proposal.model_copy(update={"approved": approved})
-    trace = [TraceStep(node="sql_approval", detail="approved" if approved else "rejected")]
+
+    now_utc = datetime.now(timezone.utc)
+    if isinstance(decision, dict):
+        approved = bool(decision.get("approved"))
+        actor = decision.get("actor")
+        reason = decision.get("reason")
+        resumed_hash = decision.get("sql_hash")
+        resumed_proposal_id = decision.get("proposal_id")
+        resumed_thread_id = decision.get("thread_id")
+    else:
+        approved = bool(decision)
+        actor = None
+        reason = None
+        resumed_hash = None
+        resumed_proposal_id = None
+        resumed_thread_id = None
+
+    # 1. Check expiration
+    is_expired = False
+    if proposal.expires_at:
+        try:
+            exp_dt = datetime.fromisoformat(proposal.expires_at)
+            if now_utc > exp_dt:
+                is_expired = True
+        except Exception:
+            pass
+
+    if is_expired:
+        logger.warning("Proposal %s expired at %s", proposal.proposal_id, proposal.expires_at)
+        updated = proposal.model_copy(
+            update={
+                "status": ApprovalStatus.EXPIRED,
+                "approved": False,
+                "decided_at": now_utc.isoformat(),
+                "actor": actor,
+                "rejection_reason": "Approval request expired",
+            }
+        )
+        get_audit_store().record_decision(
+            proposal.proposal_id,
+            ApprovalStatus.EXPIRED,
+            actor=actor,
+            reason="Approval request expired",
+        )
+        trace = [TraceStep(node="sql_approval", detail="expired")]
+        return {
+            "sql": updated,
+            "awaiting_approval": False,
+            "answer": "The SQL approval request has expired. Please ask your question again to generate a new proposal.",
+            "trace": trace,
+        }
+
+    # 2. Check SQL Hash Binding & Integrity
+    current_hash = executor.compute_sql_hash(proposal.sql)
+    if proposal.sql_hash and current_hash != proposal.sql_hash:
+        logger.warning(
+            "Security violation: proposal SQL was modified (%s != %s)",
+            current_hash,
+            proposal.sql_hash,
+        )
+        updated = proposal.model_copy(
+            update={
+                "status": ApprovalStatus.REJECTED,
+                "approved": False,
+                "decided_at": now_utc.isoformat(),
+                "actor": actor,
+                "rejection_reason": "Security violation: proposal SQL was modified",
+            }
+        )
+        get_audit_store().record_decision(
+            proposal.proposal_id,
+            ApprovalStatus.REJECTED,
+            actor=actor,
+            reason="Security violation: proposal SQL was modified",
+        )
+        return {
+            "sql": updated,
+            "awaiting_approval": False,
+            "answer": "Security violation: The SQL query was modified after proposal generation. Execution aborted.",
+            "trace": [TraceStep(node="sql_approval", detail="rejected (hash mismatch)")],
+        }
+
+    if resumed_hash and resumed_hash != proposal.sql_hash:
+        logger.warning(
+            "Security violation: decision SQL hash mismatch (%s != %s)",
+            resumed_hash,
+            proposal.sql_hash,
+        )
+        updated = proposal.model_copy(
+            update={
+                "status": ApprovalStatus.REJECTED,
+                "approved": False,
+                "decided_at": now_utc.isoformat(),
+                "actor": actor,
+                "rejection_reason": "Security violation: decision SQL hash mismatch",
+            }
+        )
+        get_audit_store().record_decision(
+            proposal.proposal_id,
+            ApprovalStatus.REJECTED,
+            actor=actor,
+            reason="Security violation: decision SQL hash mismatch",
+        )
+        return {
+            "sql": updated,
+            "awaiting_approval": False,
+            "answer": "Security violation: Approved SQL hash does not match proposed SQL (hash mismatch).",
+            "trace": [TraceStep(node="sql_approval", detail="rejected (hash mismatch)")],
+        }
+
+    # 2b. Check Proposal ID Mismatch
+    if resumed_proposal_id and resumed_proposal_id != proposal.proposal_id:
+        logger.warning(
+            "Security violation: decision proposal_id mismatch (%s != %s)",
+            resumed_proposal_id,
+            proposal.proposal_id,
+        )
+        updated = proposal.model_copy(
+            update={
+                "status": ApprovalStatus.REJECTED,
+                "approved": False,
+                "decided_at": now_utc.isoformat(),
+                "actor": actor,
+                "rejection_reason": "Security violation: proposal ID mismatch",
+            }
+        )
+        get_audit_store().record_decision(
+            proposal.proposal_id,
+            ApprovalStatus.REJECTED,
+            actor=actor,
+            reason="Security violation: proposal ID mismatch",
+        )
+        return {
+            "sql": updated,
+            "awaiting_approval": False,
+            "answer": "Security violation: Approved proposal ID does not match proposed query.",
+            "trace": [TraceStep(node="sql_approval", detail="rejected (proposal ID mismatch)")],
+        }
+
+    # 2c. Check Thread ID Mismatch
+    audit_rec = get_audit_store().get(proposal.proposal_id)
+    expected_thread_id = (audit_rec.thread_id if audit_rec else "") or state.get("thread_id") or state.get("original_question", "")
+    if resumed_thread_id and expected_thread_id and resumed_thread_id != expected_thread_id:
+        logger.warning(
+            "Security violation: decision thread_id mismatch (%s != %s)",
+            resumed_thread_id,
+            expected_thread_id,
+        )
+        updated = proposal.model_copy(
+            update={
+                "status": ApprovalStatus.REJECTED,
+                "approved": False,
+                "decided_at": now_utc.isoformat(),
+                "actor": actor,
+                "rejection_reason": "Security violation: thread ID mismatch",
+            }
+        )
+        get_audit_store().record_decision(
+            proposal.proposal_id,
+            ApprovalStatus.REJECTED,
+            actor=actor,
+            reason="Security violation: thread ID mismatch",
+        )
+        return {
+            "sql": updated,
+            "awaiting_approval": False,
+            "answer": "Security violation: Thread ID does not match the proposal's originating thread.",
+            "trace": [TraceStep(node="sql_approval", detail="rejected (thread ID mismatch)")],
+        }
+
+    # 3. Check for replay or re-execution of already completed/processed proposals
+    if proposal.status in (
+        ApprovalStatus.COMPLETED,
+        ApprovalStatus.EXECUTING,
+        ApprovalStatus.APPROVED,
+        ApprovalStatus.REJECTED,
+        ApprovalStatus.EXPIRED,
+    ):
+        logger.warning(
+            "Proposal %s has already been processed (status=%s)",
+            proposal.proposal_id,
+            proposal.status,
+        )
+        return {
+            "sql": proposal,
+            "awaiting_approval": False,
+            "answer": f"This proposal has already been processed (status: {proposal.status.value}).",
+            "trace": [TraceStep(node="sql_approval", detail=f"rejected (already {proposal.status.value})")],
+        }
+
+    if audit_rec and audit_rec.status != ApprovalStatus.PENDING.value:
+        logger.warning(
+            "Proposal %s has already been processed in audit store (status=%s)",
+            proposal.proposal_id,
+            audit_rec.status,
+        )
+        return {
+            "sql": proposal,
+            "awaiting_approval": False,
+            "answer": f"This proposal has already been processed (status: {audit_rec.status}).",
+            "trace": [TraceStep(node="sql_approval", detail=f"rejected (already {audit_rec.status})")],
+        }
+
+    # 4. Handle Decision (Approved vs Rejected)
     if approved:
+        updated = proposal.model_copy(
+            update={
+                "approved": True,
+                "status": ApprovalStatus.APPROVED,
+                "decided_at": now_utc.isoformat(),
+                "actor": actor,
+            }
+        )
+        get_audit_store().record_decision(proposal.proposal_id, ApprovalStatus.APPROVED, actor=actor)
+        trace = [TraceStep(node="sql_approval", detail=f"approved by {actor or 'operator'}")]
         return {"sql": updated, "awaiting_approval": False, "trace": trace}
+
+    rej_reason = reason or "The query was not approved by the operator."
+    updated = proposal.model_copy(
+        update={
+            "approved": False,
+            "status": ApprovalStatus.REJECTED,
+            "decided_at": now_utc.isoformat(),
+            "actor": actor,
+            "rejection_reason": rej_reason,
+        }
+    )
+    get_audit_store().record_decision(
+        proposal.proposal_id, ApprovalStatus.REJECTED, actor=actor, reason=rej_reason
+    )
+    trace = [TraceStep(node="sql_approval", detail=f"rejected: {rej_reason}")]
     return {
         "sql": updated,
         "awaiting_approval": False,
-        "answer": "The query was not approved, so nothing was run against the database.",
+        "answer": f"The query was rejected: {rej_reason}",
         "trace": trace,
     }
 
 
 def sql_execute_node(state: RagState) -> dict:                               #  Run approved SQL.
-    """Run the approved query and render its rows for the answer prompt."""  # returns rows, columns and row_count 
-    trace: list = []                                                         # Converts rows into text for LLM.
+    """Run the approved query and render its rows for the answer prompt.
+
+    Enforces:
+    1. Pre-execution approval verification and expiry check.
+    2. Re-validation of SQL AST and allowlists.
+    3. Resource limits and timeouts (SQLite progress handler / PostgreSQL statement_timeout).
+    4. Audit tracking of execution start and outcome.
+    """
+    settings = get_settings()
+    trace: list = []
     proposal = state.get("sql")
     with timed(trace, "sql_execute") as step:
         if proposal is None or not proposal.approved or not proposal.sql:
             step.detail = "skipped - not approved"
             return {"trace": trace}
+
+        now_utc = datetime.now(timezone.utc)
+        # Final expiry check before database access
+        if proposal.expires_at:
+            try:
+                exp_dt = datetime.fromisoformat(proposal.expires_at)
+                if now_utc > exp_dt:
+                    step.detail = "aborted - proposal expired"
+                    updated = proposal.model_copy(
+                        update={
+                            "status": ApprovalStatus.EXPIRED,
+                            "approved": False,
+                            "error": "Proposal expired before execution",
+                        }
+                    )
+                    get_audit_store().record_execution_end(
+                        proposal.proposal_id, ApprovalStatus.EXPIRED, "Expired before execution"
+                    )
+                    return {
+                        "sql": updated,
+                        "sql_rows_text": "",
+                        "answer": "The query could not execute because its approval expired.",
+                        "trace": trace,
+                    }
+            except Exception:
+                pass
+
+        get_audit_store().record_execution_start(proposal.proposal_id, now_utc.isoformat())
+
         try:
-            result = executor.execute(proposal.sql)
+            result = executor.execute(
+                proposal.sql,
+                settings=settings,
+                tables=proposal.tables,
+            )
+        except executor.SqlTimeoutError as exc:
+            logger.warning("SQL execution timed out: %s", exc)
+            step.detail = f"timed out: {exc}"
+            outcome = f"Timeout: {exc}"
+            get_audit_store().record_execution_end(
+                proposal.proposal_id, ApprovalStatus.FAILED, outcome
+            )
+            return {
+                "sql": proposal.model_copy(
+                    update={
+                        "status": ApprovalStatus.FAILED,
+                        "error": str(exc),
+                        "execution_completed_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                ),
+                "sql_rows_text": "",
+                "answer": f"Database query execution timed out ({exc}). Please refine your query or contact an administrator.",
+                "trace": trace,
+            }
         except Exception as exc:
             logger.exception("SQL execution failed")
             step.detail = f"failed: {exc}"
+            outcome = f"Error: {exc}"
+            get_audit_store().record_execution_end(
+                proposal.proposal_id, ApprovalStatus.FAILED, outcome
+            )
             return {
-                "sql": proposal.model_copy(update={"error": str(exc)}),
+                "sql": proposal.model_copy(
+                    update={
+                        "status": ApprovalStatus.FAILED,
+                        "error": str(exc),
+                        "execution_completed_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                ),
                 "sql_rows_text": "",
                 "trace": trace,
             }
+
         rendered = executor.render_rows(result)
-        step.detail = f"{result.row_count} rows"
+        outcome = f"{result.row_count} rows" + (" (truncated)" if result.truncated else "")
+        step.detail = outcome
+        get_audit_store().record_execution_end(
+            proposal.proposal_id, ApprovalStatus.COMPLETED, outcome
+        )
 
     return {
         "sql": proposal.model_copy(
             update={
+                "status": ApprovalStatus.COMPLETED,
                 "columns": result.columns,
                 "rows": result.rows,
                 "row_count": result.row_count,
+                "column_types": result.column_types,
+                "truncated": result.truncated,
+                "truncation_reason": result.truncation_reason,
+                "page": result.page,
+                "page_size": result.page_size,
+                "total_rows": result.total_rows,
+                "has_more": result.has_more,
+                "execution_duration_ms": result.execution_duration_ms,
+                "summary": result.summary,
+                "execution_completed_at": datetime.now(timezone.utc).isoformat(),
             }
         ),
         "sql_rows_text": rendered,

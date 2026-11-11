@@ -157,3 +157,69 @@ class IngestionRunRecord(Base):
             "error_message": self.error_message,
         }
 
+
+class ApprovalAuditEventRecord(Base):
+    """Persistent audit event log for SQL proposals, approval decisions, and execution outcomes."""
+
+    __tablename__ = "approval_audit"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    proposal_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    thread_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    event_type: Mapped[str] = mapped_column(
+        String(32),
+        index=True,
+        nullable=False,
+    )  # proposed, approved, rejected, expired, executing, completed, failed
+    sql_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    sql_query: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    dialect: Mapped[str] = mapped_column(String(32), nullable=False, default="sqlite")
+    tables_used: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        index=True,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    execution_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    execution_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    execution_outcome: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("idx_audit_prop_time", "proposal_id", "event_timestamp"),
+        Index("idx_audit_thread_time", "thread_id", "event_timestamp"),
+    )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert audit event record to dictionary."""
+        return {
+            "id": self.id,
+            "proposal_id": self.proposal_id,
+            "thread_id": self.thread_id,
+            "event_type": self.event_type,
+            "sql_hash": self.sql_hash,
+            "sql_query": self.sql_query,
+            "dialect": self.dialect,
+            "tables_used": self.tables_used,
+            "actor": self.actor,
+            "rejection_reason": self.rejection_reason,
+            "event_timestamp": (
+                self.event_timestamp.isoformat() if self.event_timestamp else None
+            ),
+            "execution_started_at": (
+                self.execution_started_at.isoformat() if self.execution_started_at else None
+            ),
+            "execution_completed_at": (
+                self.execution_completed_at.isoformat() if self.execution_completed_at else None
+            ),
+            "execution_outcome": self.execution_outcome,
+        }
+

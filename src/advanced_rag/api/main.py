@@ -50,6 +50,17 @@ class AskRequest(BaseModel):
 class ApproveRequest(BaseModel):
     thread_id: str
     approved: bool
+    proposal_id: str | None = None
+    sql_hash: str | None = None
+    reason: str | None = None
+    actor: str | None = None
+
+
+class SqlPaginateRequest(BaseModel):
+    sql: str
+    page: int = 1
+    page_size: int = 50
+    dialect: str = "sqlite"
 
 
 class RetrieveRequest(BaseModel):
@@ -167,12 +178,48 @@ def ask(request: AskRequest) -> AnswerResponse:
 @app.post("/approve", response_model=AnswerResponse)
 def approve(request: ApproveRequest) -> AnswerResponse:
     try:
-        return pipeline.resume(request.thread_id, approved=request.approved)
+        kwargs: dict[str, Any] = {}
+        if request.reason is not None:
+            kwargs["reason"] = request.reason
+        if request.actor is not None:
+            kwargs["actor"] = request.actor
+        if request.sql_hash is not None:
+            kwargs["sql_hash"] = request.sql_hash
+        if request.proposal_id is not None:
+            kwargs["proposal_id"] = request.proposal_id
+        return pipeline.resume(
+            request.thread_id,
+            approved=request.approved,
+            **kwargs,
+        )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         logger.exception("Resume failed")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/approval/audit")
+def approval_audit(limit: int = 50, thread_id: str | None = None) -> list[dict[str, Any]]:
+    from advanced_rag.text2sql.audit import get_audit_store
+    store = get_audit_store()
+    if thread_id:
+        return [record.to_dict() for record in store.list_by_thread(thread_id)]
+    return [record.to_dict() for record in store.list_recent(limit=limit)]
+
+
+@app.post("/sql/paginate")
+def sql_paginate(request: SqlPaginateRequest) -> dict[str, Any]:
+    from advanced_rag.text2sql import executor
+    try:
+        result = executor.execute(
+            request.sql,
+            page=request.page,
+            page_size=request.page_size,
+        )
+        return result.to_dict()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/pending/{thread_id}")

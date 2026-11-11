@@ -118,9 +118,13 @@ class Settings(BaseSettings):
 
     # ---------- Text2SQL store ----------
     postgres_dsn: str | None = None
+    postgres_readonly_dsn: str | None = None
     sqlite_path: Path = Path("data/ops.db")
     sql_row_limit: int = 200
-    sql_timeout_seconds: int = 15
+    sql_timeout_seconds: float = 15.0
+    sql_max_result_cells: int = 5000
+    sql_max_concurrent_queries: int = 5
+    approval_expiry_seconds: int = 300
 
     # ---------- Graph state ----------
     #: "memory" keeps SQL-approval run state in-process (single replica / sticky).
@@ -207,6 +211,25 @@ class Settings(BaseSettings):
         path = self.absolute(self.sqlite_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         return f"sqlite+pysqlite:///{path.as_posix()}"
+
+    @property
+    def sql_readonly_url(self) -> str:
+        """SQLAlchemy URL for Text2SQL read-only execution.
+
+        Fails closed if PostgreSQL is configured without a dedicated read-only DSN.
+        """
+        if self.postgres_readonly_dsn:
+            dsn = self.postgres_readonly_dsn
+            if dsn.startswith("postgresql://"):
+                return "postgresql+psycopg://" + dsn[len("postgresql://"):]
+            return dsn
+        if self.postgres_dsn:
+            raise ValueError(
+                "POSTGRES_READONLY_DSN must be explicitly configured when PostgreSQL is used for Text2SQL. "
+                "Falling back to application write credentials (POSTGRES_DSN) is strictly forbidden."
+            )
+        path = self.absolute(self.sqlite_path)
+        return f"sqlite+pysqlite:///file:{path.as_posix()}?mode=ro&uri=true"
 
     @property
     def sql_dialect(self) -> str:

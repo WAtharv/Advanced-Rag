@@ -594,6 +594,55 @@ details.usa-accordion--error > .usa-accordion__button {
 }
 .usa-table tbody tr:nth-child(even) { background: #fbfbfb; }
 
+.col-type {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--base);
+  opacity: 0.85;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sre-summary {
+  margin: 10px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 8px 12px;
+  background: rgba(0, 94, 162, 0.08);
+  border-left: 3px solid var(--primary);
+  border-radius: 2px;
+}
+
+.sql-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.badge-warning {
+  background: #fff1d2 !important;
+  color: #775500 !important;
+  border: 1px solid #e5a000 !important;
+}
+
+.sql-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--base-lightest);
+  border: 1px solid var(--base-lighter);
+  border-radius: 2px;
+  font-size: 13px;
+}
+
 /* -------------------------------------------------------------- approval */
 
 .approval { max-width: 900px; margin: 28px 0 0; }

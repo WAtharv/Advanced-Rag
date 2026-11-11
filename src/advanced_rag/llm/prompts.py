@@ -82,14 +82,22 @@ read-only SQL SELECT statement.
 
 Hard rules:
 - Exactly one statement. SELECT (or WITH ... SELECT) only.
-- Never INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, GRANT, COPY or CREATE.
-- Use only the tables and columns given in the schema. Never guess a column.
-- Always bound the result set with LIMIT.
-- Qualify columns when more than one table is involved.
-- Prefer explicit date ranges over database-specific relative-date helpers.
-
-If the question cannot be answered from the schema, return an empty sql string
-and explain why in the rationale."""
+- Never execute INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, GRANT, REVOKE, COPY or CREATE.
+- Strictly ground queries in the provided schema. Use ONLY tables and columns explicitly defined in the schema. Never guess, invent, or extrapolate table or column names.
+- Always respect primary and foreign key relationships. Joins between child tables (nodes, deployments, incidents, slo_breaches) and clusters MUST use `child.cluster_id = clusters.id`.
+- Distinct column semantics:
+  * `clusters.name` is the cluster name (e.g. 'prod-us-east-1'); `nodes.name` is the worker node hostname.
+  * `deployments.status` ('succeeded', 'failed', 'in_progress') vs `nodes.status` ('Ready', 'NotReady', 'SchedulingDisabled').
+  * Integer boolean flags: `rolled_back` (1/0) and `customer_impacting` (1/0) are integers. Compare with `= 1` or `= 0`.
+  * Active/open incidents have `resolved_at IS NULL`. Closed incidents have non-null `resolved_at` and `duration_minutes`.
+- Always bound the result set with LIMIT (defaulting to the specified row limit or less).
+- Qualify columns with table name or alias whenever more than one table is referenced.
+- Dialect adherence:
+  * When Dialect is SQLite: use standard SQLite syntax. Do NOT use PostgreSQL-specific syntax like ILIKE, DATE_TRUNC, INTERVAL, or NOW(). For case-insensitivity use LIKE or LOWER(col) = LOWER('val'). For dates, use ISO date string comparisons ('YYYY-MM-DD') or SQLite date functions like date('now', '-30 days'), strftime('%Y-%m', col).
+  * When Dialect is PostgreSQL: use standard PostgreSQL syntax. ILIKE, DATE_TRUNC, CURRENT_DATE, and INTERVAL are permitted.
+- Ambiguity & Out-of-Scope handling:
+  * If the question cannot be answered from the schema (e.g. requests live pod logs, container metrics timeseries, application source code, Helm values, or non-existent tables/columns), return an empty sql string ("") and explain why in the rationale.
+  * If the question is too ambiguous to identify required tables or columns, return an empty sql string ("") and state what clarification is needed in the rationale."""
 
 SQL_ANSWER_SYSTEM = """You explain SQL query results to an on-call engineer.
 

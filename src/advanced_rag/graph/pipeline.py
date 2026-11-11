@@ -45,12 +45,22 @@ def ask(
     started = time.perf_counter()
 
     result = graph.invoke(
-        initial_state(question, force_extractive=force_extractive), config=config
+        initial_state(question, force_extractive=force_extractive, thread_id=thread_id),
+        config=config,
     )
     return _to_response(question, result, thread_id, started)
 
 
-def resume(thread_id: str, *, approved: bool, graph=None) -> AnswerResponse:
+def resume(
+    thread_id: str,
+    *,
+    approved: bool,
+    reason: str | None = None,
+    actor: str | None = None,
+    sql_hash: str | None = None,
+    proposal_id: str | None = None,
+    graph=None,
+) -> AnswerResponse:
     """Continue a run that stopped at the SQL approval gate."""
     graph = graph or get_graph()
     config = _config(thread_id)
@@ -61,7 +71,29 @@ def resume(thread_id: str, *, approved: bool, graph=None) -> AnswerResponse:
         raise KeyError(f"no run found for thread_id {thread_id!r}")
     question = snapshot.values.get("original_question", "")
 
-    result = graph.invoke(Command(resume={"approved": approved}), config=config)
+    has_pending = any(
+        getattr(task, "interrupts", ()) for task in (snapshot.tasks or ())
+    )
+    if not has_pending:
+        sql_val = snapshot.values.get("sql")
+        status_val = getattr(sql_val, "status", None)
+        status_str = status_val.value if hasattr(status_val, "value") else str(status_val or "completed")
+        logger.warning(
+            "Thread %s has no pending approval gate (already %s)", thread_id, status_str
+        )
+        resp = _to_response(question, snapshot.values, thread_id, started)
+        resp.answer = f"This proposal has already been processed (status: {status_str})."
+        return resp
+
+    decision_payload = {
+        "approved": approved,
+        "reason": reason,
+        "actor": actor,
+        "sql_hash": sql_hash,
+        "proposal_id": proposal_id,
+        "thread_id": thread_id,
+    }
+    result = graph.invoke(Command(resume=decision_payload), config=config)
     return _to_response(question, result, thread_id, started)
 
 
@@ -92,7 +124,17 @@ def _to_response(
     if awaiting and sql is None:
         # The interrupt fired before the proposal was merged into state.
         payload = interrupts[0].value if isinstance(interrupts[0].value, dict) else {}
-        sql = SqlProposal(sql=payload.get("sql", ""), rationale=payload.get("rationale", ""))
+        sql = SqlProposal(
+            proposal_id=payload.get("proposal_id"),
+            sql_hash=payload.get("sql_hash"),
+            sql=payload.get("sql", ""),
+            rationale=payload.get("rationale", ""),
+            dialect=payload.get("dialect", "sqlite"),
+            tables=payload.get("tables", []),
+            status=payload.get("status", "pending"),
+            requested_at=payload.get("requested_at"),
+            expires_at=payload.get("expires_at"),
+        )
 
     answer = result.get("answer", "")
     if awaiting and not answer:

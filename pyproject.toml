@@ -24,6 +24,8 @@ dependencies = [
     "sqlalchemy>=2.0",
     "psycopg[binary]>=3.2",
     "redis>=5.2",
+    "sqlglot>=30.0.0,<31.0.0",
+    "alembic>=1.13.0",
     # Config
     "pydantic>=2.9",
     "pydantic-settings>=2.6",

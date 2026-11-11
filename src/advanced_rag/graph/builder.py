@@ -23,7 +23,7 @@ from langgraph.graph import END, START, StateGraph
 from advanced_rag.config import Settings, get_settings
 from advanced_rag.graph import nodes
 from advanced_rag.graph.state import RagState
-from advanced_rag.models import Route, Verdict
+from advanced_rag.models import ApprovalStatus, Route, Verdict
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,14 @@ def after_approval(state: RagState) -> Literal["sql_execute", "guardrail_output"
     return "guardrail_output"
 
 
-def after_sql_execute(state: RagState) -> Literal["retrieve", "generate"]:
+def after_sql_execute(
+    state: RagState,
+) -> Literal["retrieve", "generate", "guardrail_output"]:
+    proposal = state.get("sql")
+    if proposal is not None and (
+        proposal.status == ApprovalStatus.FAILED or proposal.error
+    ):
+        return "guardrail_output"
     return "retrieve" if state.get("route") is Route.BOTH else "generate"
 
 
@@ -153,7 +160,7 @@ def build_graph(settings: Settings | None = None, *, checkpointer=None):
         graph.add_conditional_edges(
             "sql_execute",
             after_sql_execute,
-            {"retrieve": "retrieve", "generate": "generate"},
+            {"retrieve": "retrieve", "generate": "generate", "guardrail_output": "guardrail_output"},
         )
     else:
         graph.add_conditional_edges(

@@ -237,10 +237,42 @@
   }
 
   function sqlResult(sql) {
-    if (!sql || !sql.rows || !sql.rows.length) return safe("");
+    if (!sql) return safe("");
+    if (sql.error || sql.status === "failed") {
+      return expander(
+        html`Query execution failed`,
+        html`<div class="usa-alert usa-alert--error" style="margin-top: 8px;">
+          <p class="usa-alert__heading">SQL Execution Error</p>
+          <p>${sql.error || "The database query could not be completed."}</p>
+          ${sql.sql ? html`<pre><code class="language-sql">${sql.sql}</code></pre>` : ""}
+        </div>`,
+        { open: true }
+      );
+    }
+    if (!sql.rows || !sql.rows.length) {
+      if (sql.truncated) {
+        return expander(
+          html`Query result (0 rows)`,
+          html`${sql.summary ? html`<div class="sre-summary">${sql.summary}</div>` : ""}
+            <div class="usa-alert usa-alert--warning" style="margin-top: 8px;">
+              <p class="usa-alert__heading">Result Truncated</p>
+              <p>${sql.truncation_reason || "Table width exceeds result cell budget."}</p>
+            </div>
+            ${sql.sql ? html`<pre><code class="language-sql">${sql.sql}</code></pre>` : ""}`,
+          { open: true }
+        );
+      }
+      return safe("");
+    }
+
+    var colTypes = sql.column_types || {};
     var head = sql.columns.map(function (column) {
-      return html`<th>${column}</th>`;
+      var typeLabel = colTypes[column]
+        ? html`<small class="col-type">${colTypes[column]}</small>`
+        : "";
+      return html`<th>${column}${typeLabel}</th>`;
     });
+
     var body = sql.rows.map(function (row) {
       var cells = sql.columns.map(function (_, index) {
         var cell = row[index];
@@ -248,16 +280,49 @@
       });
       return html`<tr>${cells}</tr>`;
     });
+
+    var metaBadges = [];
+    if (sql.execution_duration_ms) {
+      metaBadges.push(html`<span class="badge">${sql.execution_duration_ms.toFixed(1)} ms</span>`);
+    }
+    if (sql.truncated) {
+      metaBadges.push(
+        html`<span class="badge badge-warning" title="${sql.truncation_reason || 'Truncated'}">Truncated (${sql.truncation_reason || 'row/cell limit'})</span>`
+      );
+    }
+    if (sql.page) {
+      metaBadges.push(html`<span class="badge muted">Page ${sql.page}</span>`);
+    }
+
+    var summaryBlock = sql.summary
+      ? html`<div class="sre-summary">${sql.summary}</div>`
+      : "";
+
+    var metaBar = metaBadges.length
+      ? html`<div class="sql-meta-bar">${metaBadges}</div>`
+      : "";
+
+    var paginationBlock = "";
+    if (sql.has_more || (sql.page && sql.page > 1)) {
+      paginationBlock = html`<div class="sql-pagination">
+        <span>Showing page <b>${sql.page || 1}</b> (${sql.row_count} rows)</span>
+        <span>${sql.has_more ? "More results available on subsequent pages." : "Final page."}</span>
+      </div>`;
+    }
+
     return expander(
       html`Query result (${sql.row_count} rows)`,
-      html`<pre><code class="language-sql">${sql.sql}</code></pre>
+      html`${summaryBlock}
+        ${metaBar}
+        <pre><code class="language-sql">${sql.sql}</code></pre>
         <div class="table-wrap">
           <table class="usa-table">
             <caption>Rows returned by the approved query</caption>
             <thead><tr>${head}</tr></thead>
             <tbody>${body}</tbody>
           </table>
-        </div>`,
+        </div>
+        ${paginationBlock}`,
       { open: true }
     );
   }
@@ -363,8 +428,27 @@
       return;
     }
 
-    var rationale = awaiting.sql.rationale
-      ? html`<p class="rationale muted">${awaiting.sql.rationale}</p>`
+    var sql = awaiting.sql || {};
+    var rationale = sql.rationale
+      ? html`<p class="rationale muted">${sql.rationale}</p>`
+      : "";
+
+    var metaBadges = [];
+    if (sql.dialect) {
+      metaBadges.push(html`<span class="badge">Dialect: <b>${sql.dialect}</b></span>`);
+    }
+    if (sql.tables && sql.tables.length) {
+      metaBadges.push(html`<span class="badge">Tables: <b>${sql.tables.join(", ")}</b></span>`);
+    }
+    if (sql.expires_at) {
+      metaBadges.push(html`<span class="badge muted">Expires: <b>${sql.expires_at}</b></span>`);
+    }
+    if (sql.sql_hash) {
+      metaBadges.push(html`<span class="badge muted">Hash: <code>${sql.sql_hash.slice(0, 10)}…</code></span>`);
+    }
+
+    var metaBlock = metaBadges.length
+      ? html`<div class="approval-meta" style="margin: 8px 0; font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px;">${metaBadges}</div>`
       : "";
 
     setHtml(
@@ -373,8 +457,12 @@
         <div class="usa-alert usa-alert--warning">
           <p class="usa-alert__heading">Approval required</p>
           <p>This question needs a database query. It will not run until you approve it.</p>
-          <pre><code class="language-sql">${awaiting.sql.sql || "(no query)"}</code></pre>
+          ${metaBlock}
+          <pre><code class="language-sql">${sql.sql || "(no query)"}</code></pre>
           ${rationale}
+          <div style="margin-top: 12px;">
+            <input type="text" id="approval-reason" class="usa-input" style="max-width: 450px; font-size: 13px; padding: 6px;" placeholder="Optional rejection reason / operator notes" />
+          </div>
           <div class="actions">
             <button class="usa-button" type="button" data-approve="yes">
               Approve and run query
@@ -510,6 +598,9 @@
     var awaiting = state.awaiting;
     if (!awaiting || state.busy) return;
     askError("");
+    var sqlObj = awaiting.sql || {};
+    var reasonInput = $("approval-reason");
+    var reasonVal = reasonInput ? reasonInput.value.trim() : "";
     state.pending = {
       question: awaiting.question,
       note: approved ? "Running the approved query…" : "Recording the rejection…",
@@ -519,7 +610,14 @@
     renderHistory();
     scrollDown();
 
-    apiPost("/approve", { thread_id: awaiting.thread_id, approved: approved })
+    apiPost("/approve", {
+      thread_id: awaiting.thread_id,
+      approved: approved,
+      proposal_id: sqlObj.proposal_id || null,
+      sql_hash: sqlObj.sql_hash || null,
+      reason: approved ? null : (reasonVal || "Rejected by user in Web UI"),
+      actor: "web_operator",
+    })
       .then(function (payload) {
         state.history.push({ question: awaiting.question, payload: payload });
         state.awaiting = null;

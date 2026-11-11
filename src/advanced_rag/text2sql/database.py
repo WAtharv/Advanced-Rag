@@ -17,11 +17,11 @@ from __future__ import annotations
 import logging
 import random
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
 
 from advanced_rag.config import Settings, get_settings
@@ -112,20 +112,74 @@ DDL = [
                                                                 # COLUMN_NOTES: Metadata for LLM.
                                                                 # Without notes:LLM may guess meanings
                                                                 # With notes:LLM generates better SQL
+TABLE_NOTES = {
+    "clusters": "Kubernetes clusters managed across regions and environments",
+    "nodes": "Cluster worker nodes/VMs, hardware capacity (CPU, memory), and readiness status",
+    "deployments": "Service release history, namespaces, versions, pipeline status, and rollback flags",
+    "incidents": "Operational incidents, severity levels (sev1-sev3), affected service, root causes, duration, and customer impact",
+    "slo_breaches": "Service Level Objective (SLO) breaches, target vs actual percentages over time windows",
+}
+
+RELATIONSHIP_NOTES = [
+    "nodes.cluster_id -> clusters.id (nodes belong to a cluster)",
+    "deployments.cluster_id -> clusters.id (deployments run on a cluster)",
+    "incidents.cluster_id -> clusters.id (incidents occur on a cluster)",
+    "slo_breaches.cluster_id -> clusters.id (SLO breaches occur on a cluster)",
+    "deployments.service, incidents.service, and slo_breaches.service share identical microservice identifiers",
+]
+
 COLUMN_NOTES = {
-    "clusters.environment": "one of production, staging, development",
-    "nodes.status": "one of Ready, NotReady, SchedulingDisabled",
-    "deployments.status": "one of succeeded, failed, in_progress",
+    # clusters
+    "clusters.id": "primary key, referenced by child tables as cluster_id",
+    "clusters.name": "unique cluster identifier, e.g. prod-us-east-1, staging-eu-west-1",
+    "clusters.region": "cloud region, e.g. us-east-1, us-west-2, eu-west-1",
+    "clusters.environment": "deployment tier: one of production, staging, development",
+    "clusters.k8s_version": "Kubernetes version string, e.g. 1.28.3, 1.29.1",
+    "clusters.node_count": "current number of active nodes in the cluster",
+    "clusters.created_at": "cluster provisioning date (ISO format YYYY-MM-DD)",
+    # nodes
+    "nodes.id": "primary key",
+    "nodes.cluster_id": "foreign key -> clusters.id",
+    "nodes.name": "node hostname or instance name, e.g. prod-us-east-1-worker-01",
+    "nodes.instance_type": "cloud compute instance type, e.g. m5.2xlarge, c5.xlarge",
+    "nodes.status": "readiness: one of Ready, NotReady, SchedulingDisabled",
+    "nodes.cpu_cores": "number of CPU cores / vCPUs on the node",
+    "nodes.memory_gb": "RAM capacity in gigabytes",
+    "nodes.last_ready_at": "last date the node reported Ready status (ISO format YYYY-MM-DD)",
+    # deployments
+    "deployments.id": "primary key",
+    "deployments.cluster_id": "foreign key -> clusters.id",
+    "deployments.service": "microservice name (e.g. checkout-api, payments-api, auth-service)",
+    "deployments.namespace": "Kubernetes namespace (e.g. production, staging, default)",
+    "deployments.version": "application version or release tag, e.g. v2.4.1",
+    "deployments.deployed_at": "deployment date (ISO format YYYY-MM-DD)",
+    "deployments.deployed_by": "operator or automation bot that triggered the deploy (e.g. alice, argocd)",
+    "deployments.status": "pipeline outcome: one of succeeded, failed, in_progress",
+    "deployments.duration_seconds": "pipeline deployment duration in seconds",
     "deployments.rolled_back": "1 if the deploy was rolled back, else 0",
-    "incidents.severity": "one of sev1, sev2, sev3 (sev1 is most severe)",
+    # incidents
+    "incidents.id": "primary key",
+    "incidents.cluster_id": "foreign key -> clusters.id",
+    "incidents.service": "affected microservice name",
+    "incidents.severity": "incident severity: one of sev1, sev2, sev3 (sev1 is most severe)",
+    "incidents.title": "summary description of the operational incident",
     "incidents.root_cause_category": (
         "one of config_error, resource_exhaustion, bad_deploy, dependency_failure, "
         "network, capacity, human_error"
     ),
+    "incidents.started_at": "incident start date (ISO format YYYY-MM-DD)",
+    "incidents.resolved_at": "incident resolution date (ISO format YYYY-MM-DD), NULL while the incident is still open",
+    "incidents.duration_minutes": "total outage duration in minutes, NULL while open",
     "incidents.customer_impacting": "1 if customers were affected, else 0",
-    "incidents.resolved_at": "NULL while the incident is still open",
-    "slo_breaches.target_pct": "the SLO target, e.g. 99.90",
-    "slo_breaches.actual_pct": "the achieved percentage in the window",
+    # slo_breaches
+    "slo_breaches.id": "primary key",
+    "slo_breaches.cluster_id": "foreign key -> clusters.id",
+    "slo_breaches.service": "microservice that breached SLO",
+    "slo_breaches.slo_name": "SLO indicator name, e.g. availability_99_9, latency_p99",
+    "slo_breaches.target_pct": "the SLO target percentage, e.g. 99.90",
+    "slo_breaches.actual_pct": "the achieved percentage during the window, e.g. 98.45",
+    "slo_breaches.window_start": "breach window start date (ISO format YYYY-MM-DD)",
+    "slo_breaches.window_end": "breach window end date (ISO format YYYY-MM-DD)",
 }
 
 SERVICES = [
@@ -143,13 +197,40 @@ class QueryResult:
     columns: list[str]
     rows: list[list[Any]]
     truncated: bool = False
+    column_types: dict[str, str] = field(default_factory=dict)
+    truncation_reason: str | None = None
+    total_rows: int | None = None
+    has_more: bool = False
+    page: int = 1
+    page_size: int = 50
+    offset: int = 0
+    execution_duration_ms: float = 0.0
+    summary: str = ""
 
     @property
     def row_count(self) -> int:
         return len(self.rows)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "columns": self.columns,
+            "rows": self.rows,
+            "row_count": self.row_count,
+            "truncated": self.truncated,
+            "truncation_reason": self.truncation_reason,
+            "column_types": self.column_types,
+            "total_rows": self.total_rows if self.total_rows is not None else self.row_count,
+            "has_more": self.has_more,
+            "page": self.page,
+            "page_size": self.page_size,
+            "offset": self.offset,
+            "execution_duration_ms": self.execution_duration_ms,
+            "summary": self.summary,
+        }
+
 
 _engine: Engine | None = None
+_readonly_engine: Engine | None = None
 
 
 def get_engine(settings: Settings | None = None) -> Engine:             # Database Setup
@@ -160,6 +241,62 @@ def get_engine(settings: Settings | None = None) -> Engine:             # Databa
         logger.info("Operations database: %s", url.split("@")[-1])
         _engine = create_engine(url, future=True, pool_pre_ping=True)   # Create a database connection.
     return _engine                                                      # POSTGRES_DSN available → PostgreSQL; Otherwise → SQLite
+
+
+def get_readonly_engine(settings: Settings | None = None) -> Engine:
+    """Obtain or initialize the dedicated read-only SQLAlchemy Engine for Text2SQL.
+
+    Enforces database-level read-only access:
+    - SQLite: Uses URI `mode=ro` and executes `PRAGMA query_only = ON` on connection.
+    - PostgreSQL: Connects with dedicated read-only credentials via POSTGRES_READONLY_DSN,
+      and sets `default_transaction_read_only = ON`. Fails closed if missing.
+    - Completely separate from the application write engine.
+    """
+    global _readonly_engine
+    if _readonly_engine is not None:
+        return _readonly_engine
+
+    settings = settings or get_settings()
+    url = settings.sql_readonly_url
+    safe_target = url.split("@")[-1] if "@" in url else "sqlite"
+    logger.info("Operations read-only database: %s", safe_target)
+
+    connect_args: dict[str, Any] = {}
+    if not settings.postgres_dsn:
+        connect_args["check_same_thread"] = False
+
+    engine = create_engine(
+        url,
+        future=True,
+        pool_pre_ping=True,
+        connect_args=connect_args,
+    )
+
+    if not settings.postgres_dsn:
+        @event.listens_for(engine, "connect")
+        def _set_sqlite_readonly(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA query_only = ON;")
+            cursor.close()
+    else:
+        @event.listens_for(engine, "connect")
+        def _set_postgres_readonly(dbapi_connection, connection_record):
+            with dbapi_connection.cursor() as cursor:
+                cursor.execute("SET default_transaction_read_only = ON;")
+
+    _readonly_engine = engine
+    return _readonly_engine
+
+
+def reset_readonly_engine() -> None:
+    """Dispose and clear the cached read-only engine (for test isolation)."""
+    global _readonly_engine
+    if _readonly_engine is not None:
+        try:
+            _readonly_engine.dispose()
+        except Exception:
+            pass
+        _readonly_engine = None
 
 """
     Config
