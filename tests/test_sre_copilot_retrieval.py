@@ -71,61 +71,67 @@ def test_baseline_collections_integrity_preserved():
     """Verify that existing baseline collections (k8s_ops, k8s_ops_bge_small) were not modified."""
     settings = get_settings()
     client = QdrantClient(path=str(settings.absolute(settings.qdrant_path)))
+    try:
+        assert client.collection_exists("k8s_ops"), "k8s_ops must exist"
+        assert client.collection_exists("k8s_ops_bge_small"), "k8s_ops_bge_small must exist"
 
-    assert client.collection_exists("k8s_ops"), "k8s_ops must exist"
-    assert client.collection_exists("k8s_ops_bge_small"), "k8s_ops_bge_small must exist"
-
-    assert client.count("k8s_ops").count == 82, "k8s_ops point count must remain exactly 82"
-    assert client.count("k8s_ops_bge_small").count == 82, "k8s_ops_bge_small point count must remain exactly 82"
+        assert client.count("k8s_ops").count == 82, "k8s_ops point count must remain exactly 82"
+        assert client.count("k8s_ops_bge_small").count == 82, "k8s_ops_bge_small point count must remain exactly 82"
+    finally:
+        client.close()
 
 
 def test_sre_copilot_collection_configuration_and_point_count():
     """Verify sre_copilot_v1 exists with 384d Cosine dense vectors + IDF sparse vectors."""
     settings = get_settings()
     client = QdrantClient(path=str(settings.absolute(settings.qdrant_path)))
+    try:
+        assert client.collection_exists("sre_copilot_v1"), "sre_copilot_v1 collection must exist"
 
-    assert client.collection_exists("sre_copilot_v1"), "sre_copilot_v1 collection must exist"
+        coll_info = client.get_collection("sre_copilot_v1")
+        vectors_cfg = coll_info.config.params.vectors
+        assert isinstance(vectors_cfg, dict)
+        assert DENSE in vectors_cfg
+        assert vectors_cfg[DENSE].size == 384
+        assert vectors_cfg[DENSE].distance == models.Distance.COSINE
 
-    coll_info = client.get_collection("sre_copilot_v1")
-    vectors_cfg = coll_info.config.params.vectors
-    assert isinstance(vectors_cfg, dict)
-    assert DENSE in vectors_cfg
-    assert vectors_cfg[DENSE].size == 384
-    assert vectors_cfg[DENSE].distance == models.Distance.COSINE
+        sparse_cfg = coll_info.config.params.sparse_vectors
+        assert isinstance(sparse_cfg, dict)
+        assert SPARSE in sparse_cfg
+        assert sparse_cfg[SPARSE].modifier == models.Modifier.IDF
 
-    sparse_cfg = coll_info.config.params.sparse_vectors
-    assert isinstance(sparse_cfg, dict)
-    assert SPARSE in sparse_cfg
-    assert sparse_cfg[SPARSE].modifier == models.Modifier.IDF
-
-    actual_points = client.count("sre_copilot_v1").count
-    assert actual_points == 5533, f"Expected 5533 points, got {actual_points}"
+        actual_points = client.count("sre_copilot_v1").count
+        assert actual_points == 5533, f"Expected 5533 points, got {actual_points}"
+    finally:
+        client.close()
 
 
 def test_metadata_preservation_and_payload_completeness():
     """Verify payload metadata survives ingestion and is present on points across all 4 categories."""
     settings = get_settings()
     client = QdrantClient(path=str(settings.absolute(settings.qdrant_path)))
+    try:
+        records, _ = client.scroll(
+            collection_name="sre_copilot_v1",
+            limit=200,
+            with_payload=True,
+            with_vectors=False,
+        )
+        assert len(records) > 0
 
-    records, _ = client.scroll(
-        collection_name="sre_copilot_v1",
-        limit=200,
-        with_payload=True,
-        with_vectors=False,
-    )
-    assert len(records) > 0
+        required_keys = {"source", "title", "section", "doc_type", "category"}
+        categories_found = set()
 
-    required_keys = {"source", "title", "section", "doc_type", "category"}
-    categories_found = set()
+        for r in records:
+            payload = r.payload or {}
+            assert required_keys <= set(payload.keys()), f"Missing keys in payload: {payload.keys()}"
+            cat = payload.get("category")
+            if cat:
+                categories_found.add(cat)
 
-    for r in records:
-        payload = r.payload or {}
-        assert required_keys <= set(payload.keys()), f"Missing keys in payload: {payload.keys()}"
-        cat = payload.get("category")
-        if cat:
-            categories_found.add(cat)
-
-    assert len(categories_found) >= 2, f"Expected multiple categories in sample, got {categories_found}"
+        assert len(categories_found) >= 2, f"Expected multiple categories in sample, got {categories_found}"
+    finally:
+        client.close()
 
 
 def test_simulated_incidents_disclaimer_preservation():

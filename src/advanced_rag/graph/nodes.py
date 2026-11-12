@@ -37,6 +37,7 @@ builder rewire the pipeline from feature flags without touching this file."""
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 import uuid
@@ -237,17 +238,47 @@ def route_node(state: RagState) -> dict:                                # Decide
             reason = "offline mode" if not llm_available() else "no-LLM mode requested"
             step.detail = f"{reason} - vector retrieval only"
             return {"route": Route.VECTOR, "trace": trace}
-        try:
-            decision = get_llm().complete_json(
-                state["question"], RouteDecision, system=prompts.ROUTER_SYSTEM
-            )
-            route = Route(decision.route)
-            step.detail = f"{route.value}: {decision.reason}"
-        except Exception:
-            # Vector retrieval is the safe default: it cannot touch the database.
-            logger.exception("Routing failed - defaulting to vector retrieval")
-            route = Route.VECTOR
-            step.detail = "router unavailable - defaulted to vector"
+        use_intent_cache = getattr(settings, "intent_cache_enabled", True) and getattr(
+            settings, "enable_cache", True
+        )
+        if use_intent_cache:
+            from advanced_rag.cache import get_intent_cache
+
+            prompt_hash = hashlib.sha256(prompts.ROUTER_SYSTEM.encode("utf-8")).hexdigest()[:16]
+            model_name = getattr(settings, "llm_fast_model", settings.llm_model)
+
+            def _compute_routing() -> dict[str, Any]:
+                dec = get_llm().complete_json(
+                    state["question"], RouteDecision, system=prompts.ROUTER_SYSTEM
+                )
+                return {"route": dec.route, "reason": dec.reason}
+
+            try:
+                dec_dict = get_intent_cache().get_or_compute(
+                    question=state["question"],
+                    model_name=model_name,
+                    prompt_version=prompt_hash,
+                    compute_fn=_compute_routing,
+                )
+                route = Route(dec_dict["route"])
+                step.detail = f"{route.value}: {dec_dict.get('reason', '')}"
+            except Exception:
+                # Vector retrieval is the safe default: it cannot touch the database.
+                logger.exception("Routing failed - defaulting to vector retrieval")
+                route = Route.VECTOR
+                step.detail = "router unavailable - defaulted to vector"
+        else:
+            try:
+                decision = get_llm().complete_json(
+                    state["question"], RouteDecision, system=prompts.ROUTER_SYSTEM
+                )
+                route = Route(decision.route)
+                step.detail = f"{route.value}: {decision.reason}"
+            except Exception:
+                # Vector retrieval is the safe default: it cannot touch the database.
+                logger.exception("Routing failed - defaulting to vector retrieval")
+                route = Route.VECTOR
+                step.detail = "router unavailable - defaulted to vector"
 
     patch: dict = {"route": route, "trace": trace}
     if route is Route.REJECT:
@@ -998,7 +1029,7 @@ def sql_approval_node(state: RagState) -> dict:                     # Human-in-t
             "trace": [TraceStep(node="sql_approval", detail=f"rejected (already {proposal.status.value})")],
         }
 
-    if audit_rec and audit_rec.status != ApprovalStatus.PENDING.value:
+    if audit_rec and audit_rec.status not in (ApprovalStatus.PENDING.value, "proposed"):
         logger.warning(
             "Proposal %s has already been processed in audit store (status=%s)",
             proposal.proposal_id,

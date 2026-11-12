@@ -202,6 +202,18 @@ class Embedder:                                        # Main embedding engine.
 
     def embed_query(self, text: str) -> list[float]:
         # query_embed applies the model's query-side prefix where one is needed.
+        settings = get_settings()
+        if getattr(settings, "embedding_cache_enabled", True) and getattr(
+            settings, "enable_cache", True
+        ):
+            from advanced_rag.cache import get_embedding_cache
+
+            return get_embedding_cache().get_or_compute_dense(
+                text=text,
+                model_name=self.dense_model_name,
+                dim=self.dim,
+                compute_fn=lambda: next(iter(self.dense.query_embed([text]))).tolist(),
+            )
         return next(iter(self.dense.query_embed([text]))).tolist()
 
     def sparse_documents(self, texts: Sequence[str]) -> list[SparseVector]:
@@ -270,6 +282,18 @@ class GeminiEmbedder:                            # Used when, RETRIEVAL_BACKEND=
         return self._embed(list(texts), self._DOC_TASK)
 
     def embed_query(self, text: str) -> list[float]:
+        settings = get_settings()
+        if getattr(settings, "embedding_cache_enabled", True) and getattr(
+            settings, "enable_cache", True
+        ):
+            from advanced_rag.cache import get_embedding_cache
+
+            return get_embedding_cache().get_or_compute_dense(
+                text=text,
+                model_name=self.dense_model_name,
+                dim=self.dim,
+                compute_fn=lambda: self._embed([text], self._QUERY_TASK)[0],
+            )
         return self._embed([text], self._QUERY_TASK)[0]
 
     def _embed(self, texts: list[str], task_type: str) -> list[list[float]]:

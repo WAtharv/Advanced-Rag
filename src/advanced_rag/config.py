@@ -130,13 +130,120 @@ class Settings(BaseSettings):
     #: "memory" keeps SQL-approval run state in-process (single replica / sticky).
     #: "postgres" persists it via langgraph-checkpoint-postgres so /approve can
     #: land on any replica - requires POSTGRES_DSN and the [postgres-checkpoint]
-    #: extra; falls back to memory with a warning if either is missing.
+    #: extra; fails closed if misconfigured.
     checkpoint_backend: Literal["memory", "postgres"] = "memory"
 
+    # ---------- PostgreSQL Checkpoint & Connection Pooling (Stage 6 Tasks 66 & 67) ----------
+    postgres_checkpoint_dsn: str | None = Field(
+        None,
+        validation_alias=AliasChoices("POSTGRES_CHECKPOINT_DSN", "postgres_checkpoint_dsn"),
+    )
+    postgres_metadata_dsn: str | None = Field(
+        None,
+        validation_alias=AliasChoices("POSTGRES_METADATA_DSN", "postgres_metadata_dsn"),
+    )
+    postgres_pool_min_size: int = Field(
+        1,
+        validation_alias=AliasChoices("POSTGRES_POOL_MIN_SIZE", "postgres_pool_min_size"),
+    )
+    postgres_pool_max_size: int = Field(
+        10,
+        validation_alias=AliasChoices("POSTGRES_POOL_MAX_SIZE", "postgres_pool_max_size"),
+    )
+    postgres_pool_timeout: float = Field(
+        30.0,
+        validation_alias=AliasChoices("POSTGRES_POOL_TIMEOUT", "postgres_pool_timeout"),
+    )
+    postgres_max_retries: int = Field(
+        3,
+        validation_alias=AliasChoices("POSTGRES_MAX_RETRIES", "postgres_max_retries"),
+    )
+    postgres_retry_backoff: float = Field(
+        0.5,
+        validation_alias=AliasChoices("POSTGRES_RETRY_BACKOFF", "postgres_retry_backoff"),
+    )
+    postgres_sslmode: str | None = Field(
+        None,
+        validation_alias=AliasChoices("POSTGRES_SSLMODE", "postgres_sslmode"),
+    )
+
     # ---------- Cache ----------
-    redis_url: str | None = None
+    cache_backend: Literal["memory", "redis"] = Field(
+        "memory",
+        validation_alias=AliasChoices("CACHE_BACKEND", "cache_backend"),
+    )
+    redis_url: str | None = Field(
+        None,
+        validation_alias=AliasChoices("REDIS_URL", "redis_url"),
+    )
+    redis_connect_timeout: float = Field(
+        2.0,
+        validation_alias=AliasChoices("REDIS_CONNECT_TIMEOUT", "redis_connect_timeout"),
+    )
+    redis_socket_timeout: float = Field(
+        2.0,
+        validation_alias=AliasChoices("REDIS_SOCKET_TIMEOUT", "redis_socket_timeout"),
+    )
+    redis_max_payload_bytes: int = Field(
+        1_048_576,  # 1 MB
+        validation_alias=AliasChoices("REDIS_MAX_PAYLOAD_BYTES", "redis_max_payload_bytes"),
+    )
+    redis_key_prefix: str = Field(
+        "rag:v1",
+        validation_alias=AliasChoices("REDIS_KEY_PREFIX", "redis_key_prefix"),
+    )
     cache_ttl_seconds: int = 3600
+    cache_default_ttl: int = Field(
+        3600,
+        validation_alias=AliasChoices(
+            "CACHE_DEFAULT_TTL", "cache_default_ttl", "CACHE_TTL_SECONDS", "cache_ttl_seconds"
+        ),
+    )
+    cache_max_entries: int = Field(
+        1000,
+        validation_alias=AliasChoices("CACHE_MAX_ENTRIES", "cache_max_entries"),
+    )
     semantic_cache_threshold: float = 0.95
+
+    # Intelligent cache tiers (Stage 6 Tasks 64 & 65)
+    embedding_cache_enabled: bool = Field(
+        True,
+        validation_alias=AliasChoices("EMBEDDING_CACHE_ENABLED", "embedding_cache_enabled"),
+    )
+    embedding_cache_ttl: int = Field(
+        86400,
+        validation_alias=AliasChoices("EMBEDDING_CACHE_TTL", "embedding_cache_ttl"),
+    )
+    embedding_cache_max_entries: int = Field(
+        2000,
+        validation_alias=AliasChoices("EMBEDDING_CACHE_MAX_ENTRIES", "embedding_cache_max_entries"),
+    )
+
+    intent_cache_enabled: bool = Field(
+        True,
+        validation_alias=AliasChoices("INTENT_CACHE_ENABLED", "intent_cache_enabled"),
+    )
+    intent_cache_ttl: int = Field(
+        3600,
+        validation_alias=AliasChoices("INTENT_CACHE_TTL", "intent_cache_ttl"),
+    )
+    intent_cache_max_entries: int = Field(
+        1000,
+        validation_alias=AliasChoices("INTENT_CACHE_MAX_ENTRIES", "intent_cache_max_entries"),
+    )
+
+    retrieval_cache_enabled: bool = Field(
+        False,
+        validation_alias=AliasChoices("RETRIEVAL_CACHE_ENABLED", "retrieval_cache_enabled"),
+    )
+    retrieval_cache_ttl: int = Field(
+        600,
+        validation_alias=AliasChoices("RETRIEVAL_CACHE_TTL", "retrieval_cache_ttl"),
+    )
+    retrieval_cache_max_entries: int = Field(
+        500,
+        validation_alias=AliasChoices("RETRIEVAL_CACHE_MAX_ENTRIES", "retrieval_cache_max_entries"),
+    )
 
     # ---------- Retrieval tuning ----------
     chunk_size: int = 900
@@ -230,6 +337,44 @@ class Settings(BaseSettings):
             )
         path = self.absolute(self.sqlite_path)
         return f"sqlite+pysqlite:///file:{path.as_posix()}?mode=ro&uri=true"
+
+    @property
+    def metadata_sql_url(self) -> str:
+        """SQLAlchemy URL for application metadata (document_metadata, ingestion_runs, approval_audit).
+
+        If POSTGRES_METADATA_DSN is configured, uses PostgreSQL via modern psycopg driver.
+        When absent, preserves the existing SQLite fallback behavior (data/ops.db).
+        Does NOT silently fall back to POSTGRES_CHECKPOINT_DSN.
+        """
+        if self.postgres_metadata_dsn:
+            dsn = self.postgres_metadata_dsn.strip()
+            if dsn:
+                if dsn.startswith("postgresql://"):
+                    return "postgresql+psycopg://" + dsn[len("postgresql://") :]
+                return dsn
+        path = self.absolute(self.sqlite_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return f"sqlite+pysqlite:///{path.as_posix()}"
+
+    @property
+    def effective_checkpoint_dsn(self) -> str | None:
+        """DSN to use for PostgreSQL LangGraph checkpoints.
+
+        Prefers POSTGRES_CHECKPOINT_DSN if explicitly configured, else falls back to POSTGRES_DSN.
+        """
+        return self.postgres_checkpoint_dsn or self.postgres_dsn
+
+    def masked_dsn(self, dsn: str | None) -> str:
+        """Safely redacts passwords and credentials from database connection strings."""
+        if not dsn:
+            return ""
+        try:
+            from sqlalchemy.engine import make_url
+
+            url = make_url(dsn)
+            return url.render_as_string(hide_password=True)
+        except Exception:
+            return "<configured-dsn>"
 
     @property
     def sql_dialect(self) -> str:

@@ -12,6 +12,7 @@ import logging
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
+import threading
 from typing import Any
 
 from qdrant_client import QdrantClient, models
@@ -79,26 +80,29 @@ class HybridStore:
         self.embedder = embedder or get_embedder(self.settings)
         self.collection = collection or self.settings.qdrant_collection
         self._client: QdrantClient | None = client
+        self._lock = threading.Lock()
 
     @property
     def client(self) -> QdrantClient:
         if self._client is None:
-            if self.settings.use_remote_qdrant:
-                logger.info("Connecting to Qdrant at %s", self.settings.qdrant_url)         # Remote Qdrant
-                self._client = QdrantClient(
-                    url=self.settings.qdrant_url,
-                    api_key=self.settings.qdrant_api_key or None,
-                )
-            else:
-                path = self.settings.absolute(self.settings.qdrant_path)
-                path.mkdir(parents=True, exist_ok=True)
-                logger.info("Using embedded Qdrant at %s", path)                            # Local Qdrant
-                try:
-                    self._client = QdrantClient(path=str(path))
-                except RuntimeError as exc:
-                    if "already accessed by another instance" not in str(exc):
-                        raise
-                    raise EmbeddedStoreBusyError(path) from exc
+            with self._lock:
+                if self._client is None:
+                    if self.settings.use_remote_qdrant:
+                        logger.info("Connecting to Qdrant at %s", self.settings.qdrant_url)         # Remote Qdrant
+                        self._client = QdrantClient(
+                            url=self.settings.qdrant_url,
+                            api_key=self.settings.qdrant_api_key or None,
+                        )
+                    else:
+                        path = self.settings.absolute(self.settings.qdrant_path)
+                        path.mkdir(parents=True, exist_ok=True)
+                        logger.info("Using embedded Qdrant at %s", path)                            # Local Qdrant
+                        try:
+                            self._client = QdrantClient(path=str(path))
+                        except RuntimeError as exc:
+                            if "already accessed by another instance" not in str(exc):
+                                raise
+                            raise EmbeddedStoreBusyError(path) from exc
         return self._client
 
     # ------------------------------------------------------------- collection
@@ -116,6 +120,12 @@ class HybridStore:
             logger.warning("Dropping existing collection %s", self.collection)
             self.client.delete_collection(self.collection)
             exists = False
+            try:
+                from advanced_rag.cache import invalidate_all_knowledge_caches
+
+                invalidate_all_knowledge_caches()
+            except Exception:
+                pass
         if exists:
             return
 
@@ -368,6 +378,13 @@ class HybridStore:
             }
 
         deleted_count = self.delete_points(point_ids) if point_ids else 0
+        if deleted_count > 0:
+            try:
+                from advanced_rag.cache import invalidate_all_knowledge_caches
+
+                invalidate_all_knowledge_caches()
+            except Exception:
+                pass
         return {
             "source": clean_id,
             "deleted_chunks": deleted_count,
@@ -416,6 +433,13 @@ class HybridStore:
 
         # Step 5: Clean up only obsolete points
         deleted_obsolete = self.delete_points(obsolete_ids) if obsolete_ids else 0
+
+        try:
+            from advanced_rag.cache import invalidate_all_knowledge_caches
+
+            invalidate_all_knowledge_caches()
+        except Exception:
+            pass
 
         return {
             "source": doc_source,
@@ -509,14 +533,56 @@ class HybridStore:
         orig_collection = self.collection
         try:
             self.collection = target_collection
+            effective_fusion = (
+                fusion if fusion is not None else getattr(self.settings, "hybrid_fusion", "rrf")
+            )
+
+            use_ret_cache = getattr(self.settings, "retrieval_cache_enabled", False) and getattr(
+                self.settings, "enable_cache", True
+            )
+            cache_key: str | None = None
+            if use_ret_cache:
+                from advanced_rag.cache import get_retrieval_cache
+
+                filter_summary = {
+                    "cat": category,
+                    "dt": doc_type,
+                    "pfx": source_prefix,
+                    "did": document_id,
+                    "ver": source_version,
+                    "ns": namespace,
+                    "custom": bool(filter_),
+                }
+                cache_key = get_retrieval_cache().build_key(
+                    query=query,
+                    collection=target_collection,
+                    mode=mode,
+                    top_k=top_k,
+                    fusion=effective_fusion,
+                    filter_dict=filter_summary,
+                )
+                cached_res = get_retrieval_cache().get(cache_key)
+                if cached_res is not None:
+                    return cached_res
+
             if mode == "dense":
-                return self._single(query, top_k, DENSE, query_filter)
-            if mode == "sparse":
-                return self._single(query, top_k, SPARSE, query_filter)
-            effective_fusion = fusion if fusion is not None else getattr(self.settings, "hybrid_fusion", "rrf")
-            if effective_fusion == "rrf":
-                return self._hybrid_rrf(query, top_k, query_filter)
-            return self._hybrid_weighted(query, top_k, query_filter)
+                res = self._single(query, top_k, DENSE, query_filter)
+            elif mode == "sparse":
+                res = self._single(query, top_k, SPARSE, query_filter)
+            elif effective_fusion == "rrf":
+                res = self._hybrid_rrf(query, top_k, query_filter)
+            else:
+                res = self._hybrid_weighted(query, top_k, query_filter)
+
+            if use_ret_cache and cache_key is not None:
+                from advanced_rag.cache import get_retrieval_cache
+
+                get_retrieval_cache().set(
+                    cache_key,
+                    res,
+                    ttl=float(getattr(self.settings, "retrieval_cache_ttl", 600)),
+                )
+            return res
         finally:
             self.collection = orig_collection
 
@@ -805,6 +871,14 @@ def reset_store() -> None:
         except Exception:
             pass
         _store = None
+    try:
+        from advanced_rag.retrieval.retriever import reset_retriever
+        reset_retriever()
+    except Exception:
+        pass
+
+
+_STORE_LOCK = threading.Lock()
 
 
 def get_store() -> HybridStore:
@@ -823,7 +897,9 @@ def get_store() -> HybridStore:
     
     global _store
     if _store is None:
-        _store = HybridStore()
+        with _STORE_LOCK:
+            if _store is None:
+                _store = HybridStore()
     return _store
 
 

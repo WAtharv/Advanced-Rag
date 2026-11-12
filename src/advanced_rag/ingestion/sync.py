@@ -495,6 +495,14 @@ class CorpusSynchronizer:
                     details=plan.summary_dict(),
                 )
 
+            if upserted_chunks > 0 or pruned_docs > 0 or deleted_obsolete_chunks > 0:
+                try:
+                    from advanced_rag.cache import invalidate_all_knowledge_caches
+
+                    invalidate_all_knowledge_caches()
+                except Exception:
+                    pass
+
             return {
                 "collection": self.collection,
                 "dry_run": False,

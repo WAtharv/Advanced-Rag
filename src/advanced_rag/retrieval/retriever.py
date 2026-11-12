@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -460,6 +461,7 @@ def as_chunks(chunks: list[RetrievedChunk]) -> list[Chunk]:         # Simple hel
 
 
 _retriever: Retriever | None = None
+_RETRIEVER_LOCK = threading.Lock()
 
 
 def get_retriever() -> Retriever:
@@ -476,8 +478,22 @@ def get_retriever() -> Retriever:
     
     global _retriever
     if _retriever is None:
-        _retriever = Retriever()
+        with _RETRIEVER_LOCK:
+            if _retriever is None:
+                _retriever = Retriever()
     return _retriever
+
+
+def reset_retriever() -> None:
+    """Close and clear the global retriever singleton and its underlying store."""
+    global _retriever
+    if _retriever is not None:
+        try:
+            if hasattr(_retriever, "store") and _retriever.store is not None:
+                _retriever.store.close()
+        except Exception:
+            pass
+        _retriever = None
 
 """
 User Question

@@ -204,39 +204,10 @@ def build_graph(settings: Settings | None = None, *, checkpointer=None):
 
 
 def _make_checkpointer(settings: Settings):
-    """The checkpointer for SQL-approval run state.
+    """Resolve the checkpointer for LangGraph run state via dedicated checkpoint manager."""
+    from advanced_rag.graph.checkpoint import get_checkpointer
 
-    MemorySaver is process-local, so /approve must hit the same replica that
-    served /ask. Set CHECKPOINT_BACKEND=postgres (with POSTGRES_DSN and the
-    [postgres-checkpoint] extra) to persist it and scale out. Any problem -
-    missing package, unreachable DB - falls back to memory rather than failing
-    startup, so a misconfiguration degrades to single-replica instead of down.
-    """
-    if settings.checkpoint_backend != "postgres":
-        return MemorySaver()
-    if not settings.postgres_dsn:
-        logger.warning("CHECKPOINT_BACKEND=postgres but POSTGRES_DSN is empty - using MemorySaver")
-        return MemorySaver()
-    try:
-        from langgraph.checkpoint.postgres import PostgresSaver
-    except ImportError:
-        logger.warning(
-            'langgraph-checkpoint-postgres not installed '
-            '(pip install -e ".[postgres-checkpoint]") - using MemorySaver'
-        )
-        return MemorySaver()
-    # PostgresSaver wants a plain psycopg DSN, not the SQLAlchemy +psycopg form.
-    conn = settings.postgres_dsn.replace("+psycopg2", "").replace("+psycopg", "")
-    try:
-        # from_conn_string is a context manager; enter it for the process lifetime
-        # (this is a long-lived singleton) so the connection stays open.
-        saver = PostgresSaver.from_conn_string(conn).__enter__()
-        saver.setup()  # idempotent: creates the checkpoint tables if absent
-        logger.info("Graph checkpointer: Postgres (persistent approval state)")
-        return saver
-    except Exception as exc:
-        logger.warning("Postgres checkpointer unavailable (%s) - using MemorySaver", exc)
-        return MemorySaver()
+    return get_checkpointer(settings)
 
 
 @lru_cache

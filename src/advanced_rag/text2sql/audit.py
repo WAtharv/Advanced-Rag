@@ -285,13 +285,18 @@ class ApprovalAuditStore:
                     pass
 
                 last = rows[-1]
+                status_val = (
+                    ApprovalStatus.PENDING.value
+                    if last.event_type == "proposed"
+                    else last.event_type
+                )
                 rec = ApprovalAuditRecord(
                     proposal_id=first.proposal_id,
                     thread_id=first.thread_id,
                     sql_hash=first.sql_hash,
                     sql_query=first.sql_query,
                     tables=tables,
-                    status=last.event_type,
+                    status=status_val,
                     requested_at=first.event_timestamp.isoformat() if first.event_timestamp else "",
                     expires_at="",
                     dialect=first.dialect,

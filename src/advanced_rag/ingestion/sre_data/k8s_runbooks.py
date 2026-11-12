@@ -214,7 +214,7 @@ kubectl get pod <pod-name> -n <namespace> -o jsonpath='{.spec.containers[*].imag
 kubectl get pod <pod-name> -n <namespace> -o jsonpath='{.spec.imagePullSecrets[*].name}'
 
 # 4. Check if the specified Secret exists and is populated
-kubectl get secret <secret-name> -n <namespace> -o jsonpath='{.data.\.dockerconfigjson}' | base64 --decode | jq .
+kubectl get secret <secret-name> -n <namespace> -o jsonpath='{.data.\\.dockerconfigjson}' | base64 --decode | jq .
 
 # 5. Check if the default ServiceAccount in the namespace has imagePullSecrets attached
 kubectl get serviceaccount default -n <namespace> -o yaml

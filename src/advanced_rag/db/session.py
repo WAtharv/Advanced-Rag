@@ -30,19 +30,27 @@ def get_engine(settings: Settings | None = None, force_new: bool = False) -> Eng
         return _global_engine
 
     st = settings or get_settings()
-    url = st.sql_url
+    url = st.metadata_sql_url
     connect_args: dict[str, Any] = {}
 
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
+    else:
+        if st.postgres_sslmode:
+            connect_args["sslmode"] = st.postgres_sslmode
 
-    logger.debug("Initializing database engine: dialect=%s", st.sql_dialect)
-    engine = create_engine(
-        url,
-        future=True,
-        pool_pre_ping=True,
-        connect_args=connect_args,
-    )
+    dialect = "PostgreSQL" if url.startswith("postgresql") else "SQLite"
+    logger.debug("Initializing metadata database engine: dialect=%s", dialect)
+    engine_kwargs: dict[str, Any] = {
+        "future": True,
+        "pool_pre_ping": True,
+        "connect_args": connect_args,
+    }
+    if not url.startswith("sqlite"):
+        engine_kwargs["pool_size"] = st.postgres_pool_max_size
+        engine_kwargs["pool_timeout"] = st.postgres_pool_timeout
+
+    engine = create_engine(url, **engine_kwargs)
 
     if not force_new:
         _global_engine = engine

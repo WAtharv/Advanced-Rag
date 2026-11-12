@@ -28,7 +28,7 @@ def get_url() -> str:
     url = config.get_main_option("sqlalchemy.url")
     if url:
         return url
-    return get_settings().sql_url
+    return get_settings().metadata_sql_url
 
 
 def run_migrations_offline() -> None:

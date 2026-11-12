@@ -65,8 +65,8 @@ class SqlPaginateRequest(BaseModel):
 
 class RetrieveRequest(BaseModel):
     query: str = Field(min_length=1)
-    top_k: int | None = None
-    top_n: int | None = None
+    top_k: int | None = Field(default=None, ge=1)
+    top_n: int | None = Field(default=None, ge=1)
     mode: str = Field("hybrid", pattern="^(dense|sparse|hybrid)$")
     fusion: str = Field("rrf", pattern="^(weighted|rrf)$")
     use_hyde: bool = False
@@ -108,11 +108,30 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     setup_logging(settings.log_level)
     enable_system_trust_store()
-    logger.info("Starting API (model=%s)", settings.llm_model)
+    logger.info(
+        "Starting API (model=%s, checkpoint_backend=%s)",
+        settings.llm_model,
+        settings.checkpoint_backend,
+    )
+    if settings.checkpoint_backend == "postgres":
+        from advanced_rag.graph.checkpoint import init_checkpointer
+
+        init_checkpointer(settings)
+    if settings.cache_backend == "redis" or settings.redis_url:
+        from advanced_rag.cache import init_cache_backend
+
+        init_cache_backend(settings)
     # Compile the graph up front so the first request does not pay for it.
     pipeline.get_graph()
     yield
     logger.info("Shutting down API")
+    from advanced_rag.cache import close_cache_backend
+
+    close_cache_backend()
+    if settings.checkpoint_backend == "postgres":
+        from advanced_rag.graph.checkpoint import close_checkpointer
+
+        close_checkpointer()
 
 
 app = FastAPI(
@@ -150,7 +169,8 @@ def health() -> dict[str, Any]:
         "model": settings.llm_model if live_llm else "none (extractive answers)",
         "vector_store": settings.qdrant_url or f"embedded:{settings.qdrant_path}",
         "sql_dialect": settings.sql_dialect,
-        "cache": "redis" if settings.redis_url else "in-process",
+        "checkpoint_backend": settings.checkpoint_backend,
+        "cache": "redis" if (settings.cache_backend == "redis" or bool(settings.redis_url)) else "in-process",
         "features": {
             "hyde": settings.enable_hyde,
             "crag": settings.enable_crag,
@@ -286,11 +306,18 @@ def retrieve(request: RetrieveRequest) -> dict[str, Any]:
     }
 
 
+@app.get("/cache/stats")
+def cache_stats() -> dict[str, Any]:
+    from advanced_rag.cache import get_all_cache_stats
+
+    return get_all_cache_stats()
+
+
 @app.post("/cache/clear")
 def clear_cache() -> dict[str, str]:
-    from advanced_rag.cache import get_cache
+    from advanced_rag.cache import invalidate_all_knowledge_caches
 
-    get_cache().clear()
+    invalidate_all_knowledge_caches()
     return {"status": "cleared"}
 
 
@@ -479,6 +506,10 @@ async def upload_document(
         "status": "indexed",
     })
 
+    from advanced_rag.cache import invalidate_all_knowledge_caches
+
+    invalidate_all_knowledge_caches()
+
     if is_replacement:
         response.status_code = status.HTTP_200_OK
         msg = "Document replaced and indexed successfully"
@@ -540,6 +571,10 @@ def delete_document(document_id: str) -> DocumentDeleteResponse:
         shutil.rmtree(storage_path.parent, ignore_errors=True)
 
     registry.delete(document_id)
+
+    from advanced_rag.cache import invalidate_all_knowledge_caches
+
+    invalidate_all_knowledge_caches()
 
     return DocumentDeleteResponse(
         document_id=document_id,
